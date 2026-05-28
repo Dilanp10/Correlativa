@@ -57,6 +57,11 @@ async function loadUserCareer(userId: string) {
   const setActiveCareer = useCareerStore.getState().setActiveCareer
   const setCareerLoading = useCareerStore.getState().setLoading
 
+  // Marcamos "cargando" ANTES de leer la base. Si no, el navigate post-login
+  // corre antes de que termine esta lectura async y el guard, viendo
+  // isLoading=false + activeCareer=null, redirige a onboarding por error.
+  setCareerLoading(true)
+
   pushDebug(`loadUserCareer start · userId=${userId}`)
 
   const { data: profile, error: profileError } = await supabase
