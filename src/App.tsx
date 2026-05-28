@@ -21,26 +21,34 @@ async function loadUserCareer(userId: string) {
   const setActiveCareer = useCareerStore.getState().setActiveCareer
   const setCareerLoading = useCareerStore.getState().setLoading
 
-  const { data: profile } = await supabase
+  console.log('[DEBUG] loadUserCareer → start, userId =', userId)
+
+  const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('active_career_id')
     .eq('id', userId)
     .single()
 
+  console.log('[DEBUG] lectura users →', { profile, profileError })
+
   if (!profile?.active_career_id) {
+    console.log('[DEBUG] sin active_career_id → redirige a onboarding')
     setActiveCareer(null)
     setCareerLoading(false)
     return
   }
 
-  const { data: career } = await supabase
+  const { data: career, error: careerError } = await supabase
     .from('careers')
     .select('*, university:universities(id, name, short_name)')
     .eq('id', profile.active_career_id)
     .single()
 
+  console.log('[DEBUG] lectura careers →', { career, careerError })
+
   setActiveCareer(career ?? null)
   setCareerLoading(false)
+  console.log('[DEBUG] loadUserCareer → fin, activeCareer =', career ?? null)
 }
 
 // Fallback minimalista mientras se descarga el chunk lazy
@@ -61,6 +69,7 @@ export default function App() {
   useEffect(() => {
     // Carga inicial de sesión
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('[DEBUG] getSession →', session?.user?.id ?? 'sin sesión')
       setSession(session)
       setUser(session?.user ?? null)
       setAuthLoading(false)
@@ -74,7 +83,8 @@ export default function App() {
     // Escuchar cambios de sesión
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[DEBUG] onAuthStateChange →', event, session?.user?.id ?? 'sin sesión')
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
