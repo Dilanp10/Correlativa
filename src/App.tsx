@@ -15,6 +15,7 @@ import OnboardingPage from '@/pages/OnboardingPage'
 // TreePage incluye @xyflow/react (~250 kB), así no bloquea el primer load.
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const TreePage      = lazy(() => import('@/pages/TreePage'))
+const AgendaPage    = lazy(() => import('@/pages/AgendaPage'))
 const ProfilePage   = lazy(() => import('@/pages/ProfilePage'))
 
 async function loadUserCareer(userId: string) {
@@ -124,6 +125,16 @@ export default function App() {
               <ProtectedRoute>
                 <CareerRequiredRoute>
                   <TreePage />
+                </CareerRequiredRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agenda"
+            element={
+              <ProtectedRoute>
+                <CareerRequiredRoute>
+                  <AgendaPage />
                 </CareerRequiredRoute>
               </ProtectedRoute>
             }

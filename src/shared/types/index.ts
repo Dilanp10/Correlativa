@@ -11,6 +11,8 @@ export type SubjectStatus =
 
 export type TreeNodeState = 'bloqueada' | 'disponible' | 'cursando' | 'completada'
 
+export type AgendaEventType = 'examen' | 'entrega' | 'recordatorio'
+
 // ── Entidades de base de datos ────────────────────────────────────────────────
 
 export interface University {
@@ -70,6 +72,20 @@ export interface UserSubject {
   notes: string | null
   updated_at: string
   created_at: string
+}
+
+export interface AgendaEvent {
+  id: string
+  user_id: string
+  subject_id: string | null
+  type: AgendaEventType
+  title: string
+  notes: string | null
+  due_at: string
+  all_day: boolean
+  completed: boolean
+  created_at: string
+  updated_at: string
 }
 
 // ── Tipos compuestos ──────────────────────────────────────────────────────────

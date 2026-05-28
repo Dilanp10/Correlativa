@@ -16,5 +16,6 @@ export const ROUTES = {
   ONBOARDING: '/onboarding',
   DASHBOARD: '/dashboard',
   TREE: '/tree',
+  AGENDA: '/agenda',
   PROFILE: '/profile',
 } as const

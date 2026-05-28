@@ -27,6 +27,18 @@ const navItems = [
     ),
   },
   {
+    to: ROUTES.AGENDA,
+    label: 'Agenda',
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+    ),
+  },
+  {
     to: ROUTES.PROFILE,
     label: 'Perfil',
     icon: (active: boolean) => (
@@ -47,7 +59,7 @@ export default function BottomNav() {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1 px-6 py-1.5 rounded-xl transition-colors ${
+              `flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-colors ${
                 isActive ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
               }`
             }

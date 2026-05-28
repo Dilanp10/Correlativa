@@ -4,9 +4,11 @@ import type { NodeMouseHandler } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
+import { useAgenda } from '@/features/agenda/hooks/useAgenda'
 import { SubjectNode } from '@/features/tree/components/SubjectNode'
 import { useTreeLayout } from '@/features/tree/hooks/useTreeLayout'
 import SubjectDetailSheet from '@/features/subjects/components/SubjectDetailSheet'
+import SubjectAgendaEvents from '@/features/agenda/components/SubjectAgendaEvents'
 import BottomNav from '@/shared/components/BottomNav'
 
 // Definido fuera del componente: React Flow necesita una referencia estable
@@ -14,6 +16,7 @@ const nodeTypes = { subject: SubjectNode }
 
 export default function TreePage() {
   const { isLoading, loaded } = useSubjects()
+  useAgenda() // precarga los eventos para mostrarlos en el detalle de cada materia
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
 
   const { nodes, edges } = useTreeLayout()
@@ -97,6 +100,9 @@ export default function TreePage() {
       <SubjectDetailSheet
         subjectId={selectedSubjectId}
         onClose={() => setSelectedSubjectId(null)}
+        extraContent={
+          selectedSubjectId ? <SubjectAgendaEvents subjectId={selectedSubjectId} /> : null
+        }
       />
 
       <BottomNav />

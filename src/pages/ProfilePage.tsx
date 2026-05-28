@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useCareerStore } from '@/features/career/store/careerStore'
 import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
+import { useAgendaStore } from '@/features/agenda/store/agendaStore'
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
 import { signOut } from '@/shared/lib/supabase/auth'
 import { supabase } from '@/shared/lib/supabase/client'
@@ -16,6 +17,7 @@ export default function ProfilePage() {
   const activeCareer = useCareerStore(s => s.activeCareer)
   const resetCareer = useCareerStore(s => s.reset)
   const resetSubjects = useSubjectsStore(s => s.reset)
+  const resetAgenda = useAgendaStore(s => s.reset)
   const getProgress = useSubjectsStore(s => s.getProgress)
   useSubjects()
 
@@ -30,6 +32,7 @@ export default function ProfilePage() {
     resetAuth()
     resetCareer()
     resetSubjects()
+    resetAgenda()
     navigate(ROUTES.LOGIN)
   }
 

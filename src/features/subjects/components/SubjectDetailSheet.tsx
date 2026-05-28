@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import BottomSheet from '@/shared/components/BottomSheet'
 import Badge from '@/shared/components/Badge'
@@ -22,9 +22,12 @@ const STATUSES_WITH_GRADE: SubjectStatus[] = ['aprobada', 'promocionada']
 interface Props {
   subjectId: string | null
   onClose: () => void
+  // Slot opcional para contenido de otras features (ej: eventos de agenda),
+  // así subjects no depende directamente de agenda.
+  extraContent?: ReactNode
 }
 
-export default function SubjectDetailSheet({ subjectId, onClose }: Props) {
+export default function SubjectDetailSheet({ subjectId, onClose, extraContent }: Props) {
   const subjects = useSubjectsStore(s => s.subjects)
   const treeStates = useSubjectsStore(s => s.treeStates)
   const getUserSubject = useSubjectsStore(s => s.getUserSubject)
@@ -220,6 +223,9 @@ export default function SubjectDetailSheet({ subjectId, onClose }: Props) {
               </div>
             </div>
           )}
+
+          {/* Contenido extra (ej: próximos eventos de agenda) */}
+          {extraContent}
         </div>
       )}
     </BottomSheet>
