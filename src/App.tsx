@@ -1,10 +1,46 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from '@/shared/lib/supabase/client'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useCareerStore } from '@/features/career/store/careerStore'
 import ProtectedRoute from '@/shared/components/ProtectedRoute'
 import CareerRequiredRoute from '@/shared/components/CareerRequiredRoute'
+
+// ── DEBUG temporal: panel en pantalla para diagnosticar persistencia de carrera
+const debugLines: string[] = []
+const debugListeners = new Set<() => void>()
+function pushDebug(line: string) {
+  const stamp = new Date().toLocaleTimeString()
+  debugLines.push(`${stamp}  ${line}`)
+  debugListeners.forEach(fn => fn())
+  console.log('[DEBUG]', line)
+}
+
+function DebugOverlay() {
+  const [, force] = useState(0)
+  useEffect(() => {
+    const listener = () => force(n => n + 1)
+    debugListeners.add(listener)
+    return () => { debugListeners.delete(listener) }
+  }, [])
+  return (
+    <div
+      style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, maxHeight: '45vh',
+        overflowY: 'auto', background: 'rgba(0,0,0,0.92)', color: '#22ff88',
+        fontSize: 11, lineHeight: 1.45, fontFamily: 'monospace', padding: '8px 10px',
+        zIndex: 999999, whiteSpace: 'pre-wrap', borderTop: '1px solid #22ff88',
+      }}
+    >
+      <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: 4 }}>
+        DEBUG (sacá captura de esto)
+      </div>
+      {debugLines.length === 0
+        ? <div style={{ color: '#888' }}>esperando eventos…</div>
+        : debugLines.map((l, i) => <div key={i}>{l}</div>)}
+    </div>
+  )
+}
 
 // Carga eager — necesarios para auth flow inicial
 import LoginPage from '@/pages/LoginPage'
@@ -21,7 +57,7 @@ async function loadUserCareer(userId: string) {
   const setActiveCareer = useCareerStore.getState().setActiveCareer
   const setCareerLoading = useCareerStore.getState().setLoading
 
-  console.log('[DEBUG] loadUserCareer → start, userId =', userId)
+  pushDebug(`loadUserCareer start · userId=${userId}`)
 
   const { data: profile, error: profileError } = await supabase
     .from('users')
@@ -29,10 +65,10 @@ async function loadUserCareer(userId: string) {
     .eq('id', userId)
     .single()
 
-  console.log('[DEBUG] lectura users →', { profile, profileError })
+  pushDebug(`users → profile=${JSON.stringify(profile)} err=${JSON.stringify(profileError)}`)
 
   if (!profile?.active_career_id) {
-    console.log('[DEBUG] sin active_career_id → redirige a onboarding')
+    pushDebug('sin active_career_id → ONBOARDING')
     setActiveCareer(null)
     setCareerLoading(false)
     return
@@ -44,11 +80,11 @@ async function loadUserCareer(userId: string) {
     .eq('id', profile.active_career_id)
     .single()
 
-  console.log('[DEBUG] lectura careers →', { career, careerError })
+  pushDebug(`careers → name=${JSON.stringify(career?.name ?? null)} err=${JSON.stringify(careerError)}`)
 
   setActiveCareer(career ?? null)
   setCareerLoading(false)
-  console.log('[DEBUG] loadUserCareer → fin, activeCareer =', career ?? null)
+  pushDebug(`fin · activeCareer=${career ? career.name : 'null'}`)
 }
 
 // Fallback minimalista mientras se descarga el chunk lazy
@@ -69,7 +105,7 @@ export default function App() {
   useEffect(() => {
     // Carga inicial de sesión
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[DEBUG] getSession →', session?.user?.id ?? 'sin sesión')
+      pushDebug(`getSession → ${session?.user?.id ?? 'sin sesión'}`)
       setSession(session)
       setUser(session?.user ?? null)
       setAuthLoading(false)
@@ -84,7 +120,7 @@ export default function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[DEBUG] onAuthStateChange →', event, session?.user?.id ?? 'sin sesión')
+      pushDebug(`onAuthStateChange → ${event} · ${session?.user?.id ?? 'sin sesión'}`)
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
@@ -99,6 +135,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <DebugOverlay />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
