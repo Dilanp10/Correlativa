@@ -11,6 +11,8 @@ import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import OnboardingPage from '@/pages/OnboardingPage'
 
+import LevelUpWatcher from '@/features/gamification/components/LevelUpWatcher'
+
 // Carga lazy — solo se descargan cuando el usuario navega a esa ruta.
 // TreePage incluye @xyflow/react (~250 kB), así no bloquea el primer load.
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
@@ -99,6 +101,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {/* Watcher global de subida de nivel — se monta una vez y observa
+          los stores; solo actúa cuando los datos están cargados. */}
+      <LevelUpWatcher />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

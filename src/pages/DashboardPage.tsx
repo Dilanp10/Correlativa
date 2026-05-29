@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useCareerStore } from '@/features/career/store/careerStore'
 import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
+import { useAgenda } from '@/features/agenda/hooks/useAgenda'
+import { useGamification } from '@/features/gamification/hooks/useGamification'
+import LevelCard from '@/features/gamification/components/LevelCard'
 import BottomNav from '@/shared/components/BottomNav'
 import { ROUTES } from '@/shared/constants'
 
@@ -28,6 +31,8 @@ export default function DashboardPage() {
   const activeCareer = useCareerStore(s => s.activeCareer)
   const getProgress = useSubjectsStore(s => s.getProgress)
   const { isLoading } = useSubjects()
+  useAgenda() // precarga eventos de agenda para alimentar la gamificación
+  const { state: gamificationState } = useGamification()
 
   const progress = getProgress()
 
@@ -44,6 +49,9 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex-1 px-5 space-y-6">
+        {/* Nivel (gamificación) */}
+        <LevelCard state={gamificationState} />
+
         {/* Barra de progreso */}
         <div className="bg-bg-surface rounded-2xl p-5 border border-muted/30">
           <div className="flex items-end justify-between mb-3">
