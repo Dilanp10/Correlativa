@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
 import { supabase } from '@/shared/lib/supabase/client'
+import { emitActivity } from '@/shared/lib/userActivityBus'
 import type { SubjectStatus } from '@/shared/types'
 
 export function useUserSubjects() {
@@ -32,6 +33,8 @@ export function useUserSubjects() {
         )
 
       if (error) throw error
+      // Notifica que el usuario hizo una acción válida (alimenta la racha).
+      emitActivity()
     } catch (err) {
       console.error('Error actualizando estado de materia:', err)
       store.rollbackUpdate(subjectId, prev)

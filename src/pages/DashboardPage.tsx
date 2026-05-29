@@ -6,6 +6,8 @@ import { useSubjects } from '@/features/subjects/hooks/useSubjects'
 import { useAgenda } from '@/features/agenda/hooks/useAgenda'
 import { useGamification } from '@/features/gamification/hooks/useGamification'
 import LevelCard from '@/features/gamification/components/LevelCard'
+import { useStreak } from '@/features/streaks/hooks/useStreak'
+import StreakChip from '@/features/streaks/components/StreakChip'
 import BottomNav from '@/shared/components/BottomNav'
 import { ROUTES } from '@/shared/constants'
 
@@ -33,6 +35,7 @@ export default function DashboardPage() {
   const { isLoading } = useSubjects()
   useAgenda() // precarga eventos de agenda para alimentar la gamificación
   const { state: gamificationState } = useGamification()
+  const { display: streakDisplay, loaded: streakLoaded } = useStreak()
 
   const progress = getProgress()
 
@@ -40,12 +43,19 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-bg-base flex flex-col pb-20">
       {/* Header */}
       <div className="px-5 pt-12 pb-6">
-        <p className="text-xs font-medium text-text-secondary uppercase tracking-widest mb-1">
-          {activeCareer?.university?.short_name ?? ''}
-        </p>
-        <h1 className="text-2xl font-bold text-text-primary leading-tight">
-          {activeCareer?.name ?? 'Mi carrera'}
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-text-secondary uppercase tracking-widest mb-1">
+              {activeCareer?.university?.short_name ?? ''}
+            </p>
+            <h1 className="text-2xl font-bold text-text-primary leading-tight">
+              {activeCareer?.name ?? 'Mi carrera'}
+            </h1>
+          </div>
+          <div className="shrink-0 mt-1">
+            <StreakChip display={streakDisplay} loaded={streakLoaded} />
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 px-5 space-y-6">

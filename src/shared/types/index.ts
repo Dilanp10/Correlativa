@@ -98,6 +98,15 @@ export interface ClassSchedule {
   created_at: string
 }
 
+export interface StreakState {
+  /** 'YYYY-MM-DD' en zona local del usuario. null = nunca tuvo actividad. */
+  lastActiveDate: string | null
+  /** Días consecutivos contados al cierre de lastActiveDate. */
+  currentStreak: number
+  /** 'YYYY-MM' del mes en que se gastó el congelador. null = sin usar este mes. */
+  freezeUsedMonth: string | null
+}
+
 // ── Tipos compuestos ──────────────────────────────────────────────────────────
 
 export interface SubjectWithCorrelatives extends Subject {

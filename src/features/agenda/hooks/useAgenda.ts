@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '@/shared/lib/supabase/client'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useAgendaStore } from '@/features/agenda/store/agendaStore'
+import { emitActivity } from '@/shared/lib/userActivityBus'
 import type { AgendaEvent, AgendaEventType } from '@/shared/types'
 
 export interface AgendaEventInput {
@@ -99,9 +100,12 @@ export function useAgenda() {
     }
   }
 
-  async function updateEvent(id: string, patch: Partial<AgendaEventInput> & { completed?: boolean }) {
+  async function updateEvent(
+    id: string,
+    patch: Partial<AgendaEventInput> & { completed?: boolean }
+  ): Promise<boolean> {
     const prev = store.getById(id)
-    if (!prev) return
+    if (!prev) return false
 
     const optimistic: AgendaEvent = { ...prev, ...patch, updated_at: new Date().toISOString() }
     store.upsertLocal(optimistic)
@@ -109,16 +113,21 @@ export function useAgenda() {
     try {
       const { error } = await supabase.from('agenda_events').update(patch).eq('id', id)
       if (error) throw error
+      return true
     } catch (err) {
       console.error('Error actualizando evento:', err)
       store.upsertLocal(prev)
+      return false
     }
   }
 
   async function toggleComplete(id: string) {
     const ev = store.getById(id)
     if (!ev) return
-    await updateEvent(id, { completed: !ev.completed })
+    const newCompleted = !ev.completed
+    const ok = await updateEvent(id, { completed: newCompleted })
+    // Solo cuenta como actividad cuando se MARCA como hecho (no al desmarcar).
+    if (ok && newCompleted) emitActivity()
   }
 
   async function deleteEvent(id: string) {
