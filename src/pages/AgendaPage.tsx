@@ -4,6 +4,8 @@ import BottomSheet from '@/shared/components/BottomSheet'
 import { useAgenda } from '@/features/agenda/hooks/useAgenda'
 import { useClassSchedule } from '@/features/agenda/hooks/useClassSchedule'
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
+import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
+import { UNBLOCKING_STATUSES } from '@/shared/constants'
 import AgendaEventCard from '@/features/agenda/components/AgendaEventCard'
 import AgendaEventForm from '@/features/agenda/components/AgendaEventForm'
 import WeeklySchedule from '@/features/agenda/components/WeeklySchedule'
@@ -18,6 +20,15 @@ export default function AgendaPage() {
   const { events, isLoading, loaded, createEvent, updateEvent, toggleComplete, deleteEvent } = useAgenda()
   const schedule = useClassSchedule()
   const { subjects } = useSubjects()
+  const userSubjects = useSubjectsStore(s => s.userSubjects)
+
+  // Materias ya aprobadas/promocionadas: no se pueden vincular a eventos nuevos.
+  type UnblockingStatus = typeof UNBLOCKING_STATUSES[number]
+  const approvedSubjectIds = new Set(
+    userSubjects
+      .filter(us => UNBLOCKING_STATUSES.includes(us.status as UnblockingStatus))
+      .map(us => us.subject_id)
+  )
 
   const [view, setView] = useState<View>('proximos')
   const [filter, setFilter] = useState<Filter>('all')
@@ -30,7 +41,11 @@ export default function AgendaPage() {
 
   const subjectName = (id: string | null) =>
     id ? subjects.find(s => s.id === id)?.name ?? null : null
-  const subjectOptions = subjects.map(s => ({ id: s.id, name: s.name }))
+  const subjectOptions = subjects.map(s => ({
+    id: s.id,
+    name: s.name,
+    approved: approvedSubjectIds.has(s.id),
+  }))
 
   const filtered = events.filter(e => filter === 'all' || e.type === filter)
   const active = filtered.filter(e => !e.completed)

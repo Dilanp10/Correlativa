@@ -7,6 +7,8 @@ import { AGENDA_TYPES, AGENDA_TYPE_META } from '@/features/agenda/lib/agenda'
 interface SubjectOption {
   id: string
   name: string
+  /** Si true, no se puede elegir para un evento nuevo (materia ya aprobada/promocionada). */
+  approved: boolean
 }
 
 interface Props {
@@ -104,8 +106,12 @@ export default function AgendaEventForm({ editing, subjects, onSubmit, onDelete,
         <select value={subjectId} onChange={e => setSubjectId(e.target.value)} className={fieldClass}>
           <option value="">Sin materia</option>
           {subjects.map(s => (
-            <option key={s.id} value={s.id}>
+            // Las aprobadas/promocionadas se muestran pero no se pueden elegir
+            // para un evento nuevo. Si ya estaba seleccionada (edición de un
+            // evento previo), HTML permite mostrarla seleccionada igual.
+            <option key={s.id} value={s.id} disabled={s.approved}>
               {s.name}
+              {s.approved ? ' — (ya aprobada)' : ''}
             </option>
           ))}
         </select>
