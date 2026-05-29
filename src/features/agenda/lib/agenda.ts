@@ -81,3 +81,20 @@ export function urgencyColor(event: AgendaEvent): string {
 export function isUrgent(event: AgendaEvent): boolean {
   return !event.completed && daysUntil(event.due_at) <= 2
 }
+
+// ── Horario semanal ─────────────────────────────────────────────────────────
+
+export const WEEKDAYS: { value: number; short: string; full: string }[] = [
+  { value: 1, short: 'Lun', full: 'Lunes' },
+  { value: 2, short: 'Mar', full: 'Martes' },
+  { value: 3, short: 'Mié', full: 'Miércoles' },
+  { value: 4, short: 'Jue', full: 'Jueves' },
+  { value: 5, short: 'Vie', full: 'Viernes' },
+  { value: 6, short: 'Sáb', full: 'Sábado' },
+  { value: 7, short: 'Dom', full: 'Domingo' },
+]
+
+/** Recorta 'HH:MM:SS' (o 'HH:MM') a 'HH:MM'. */
+export function formatTime(time: string): string {
+  return time.slice(0, 5)
+}

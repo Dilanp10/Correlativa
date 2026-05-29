@@ -88,6 +88,16 @@ export interface AgendaEvent {
   updated_at: string
 }
 
+export interface ClassSchedule {
+  id: string
+  user_id: string
+  subject_id: string
+  weekday: number // 1 = lunes … 7 = domingo (ISO)
+  start_time: string // 'HH:MM:SS'
+  end_time: string
+  created_at: string
+}
+
 // ── Tipos compuestos ──────────────────────────────────────────────────────────
 
 export interface SubjectWithCorrelatives extends Subject {

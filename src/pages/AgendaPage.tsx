@@ -2,21 +2,31 @@ import { useState } from 'react'
 import BottomNav from '@/shared/components/BottomNav'
 import BottomSheet from '@/shared/components/BottomSheet'
 import { useAgenda } from '@/features/agenda/hooks/useAgenda'
+import { useClassSchedule } from '@/features/agenda/hooks/useClassSchedule'
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
 import AgendaEventCard from '@/features/agenda/components/AgendaEventCard'
 import AgendaEventForm from '@/features/agenda/components/AgendaEventForm'
+import WeeklySchedule from '@/features/agenda/components/WeeklySchedule'
+import ScheduleForm from '@/features/agenda/components/ScheduleForm'
 import { GROUP_ORDER, GROUP_LABELS, groupOf, AGENDA_TYPES, AGENDA_TYPE_META } from '@/features/agenda/lib/agenda'
-import type { AgendaEvent, AgendaEventType } from '@/shared/types'
+import type { AgendaEvent, AgendaEventType, ClassSchedule } from '@/shared/types'
 
 type Filter = 'all' | AgendaEventType
+type View = 'proximos' | 'horario'
 
 export default function AgendaPage() {
   const { events, isLoading, loaded, createEvent, updateEvent, toggleComplete, deleteEvent } = useAgenda()
+  const schedule = useClassSchedule()
   const { subjects } = useSubjects()
 
+  const [view, setView] = useState<View>('proximos')
   const [filter, setFilter] = useState<Filter>('all')
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [editing, setEditing] = useState<AgendaEvent | null>(null)
+
+  const [eventSheetOpen, setEventSheetOpen] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<AgendaEvent | null>(null)
+
+  const [slotSheetOpen, setSlotSheetOpen] = useState(false)
+  const [editingSlot, setEditingSlot] = useState<ClassSchedule | null>(null)
 
   const subjectName = (id: string | null) =>
     id ? subjects.find(s => s.id === id)?.name ?? null : null
@@ -26,23 +36,35 @@ export default function AgendaPage() {
   const active = filtered.filter(e => !e.completed)
   const completed = filtered.filter(e => e.completed)
 
-  function openNew() {
-    setEditing(null)
-    setSheetOpen(true)
+  function openNewEvent() {
+    setEditingEvent(null)
+    setEventSheetOpen(true)
+  }
+  function openEditEvent(event: AgendaEvent) {
+    setEditingEvent(event)
+    setEventSheetOpen(true)
+  }
+  function closeEventSheet() {
+    setEventSheetOpen(false)
+    setEditingEvent(null)
   }
 
-  function openEdit(event: AgendaEvent) {
-    setEditing(event)
-    setSheetOpen(true)
+  function openNewSlot() {
+    setEditingSlot(null)
+    setSlotSheetOpen(true)
+  }
+  function openEditSlot(slot: ClassSchedule) {
+    setEditingSlot(slot)
+    setSlotSheetOpen(true)
+  }
+  function closeSlotSheet() {
+    setSlotSheetOpen(false)
+    setEditingSlot(null)
   }
 
-  function closeSheet() {
-    setSheetOpen(false)
-    setEditing(null)
-  }
-
-  const showLoading = isLoading && !loaded
-  const showEmpty = loaded && events.length === 0
+  const showLoading = view === 'proximos' ? isLoading && !loaded : schedule.isLoading && !schedule.loaded
+  const showEmptyEvents = loaded && events.length === 0
+  const showEmptySchedule = schedule.loaded && schedule.slots.length === 0
 
   return (
     <div className="min-h-screen bg-bg-base flex flex-col pb-24">
@@ -52,18 +74,37 @@ export default function AgendaPage() {
         <p className="text-sm text-text-secondary mt-0.5">Lo que se te viene, ordenado.</p>
       </div>
 
-      {/* Filtros */}
-      <div className="px-5 pb-3 flex gap-2 overflow-x-auto">
-        <FilterChip label="Todos" active={filter === 'all'} onClick={() => setFilter('all')} />
-        {AGENDA_TYPES.map(t => (
-          <FilterChip
-            key={t}
-            label={`${AGENDA_TYPE_META[t].icon} ${AGENDA_TYPE_META[t].label}`}
-            active={filter === t}
-            onClick={() => setFilter(t)}
-          />
-        ))}
+      {/* Toggle de vista */}
+      <div className="px-5 pb-3">
+        <div className="inline-flex rounded-xl bg-bg-surface border border-muted/40 p-1">
+          {(['proximos', 'horario'] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                view === v ? 'bg-accent text-white' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              {v === 'proximos' ? 'Próximos' : 'Horario'}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Filtros (solo en Próximos) */}
+      {view === 'proximos' && (
+        <div className="px-5 pb-3 flex gap-2 overflow-x-auto">
+          <FilterChip label="Todos" active={filter === 'all'} onClick={() => setFilter('all')} />
+          {AGENDA_TYPES.map(t => (
+            <FilterChip
+              key={t}
+              label={`${AGENDA_TYPE_META[t].icon} ${AGENDA_TYPE_META[t].label}`}
+              active={filter === t}
+              onClick={() => setFilter(t)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Contenido */}
       <div className="px-5 flex-1">
@@ -75,95 +116,135 @@ export default function AgendaPage() {
           </div>
         )}
 
-        {showEmpty && (
-          <div className="flex flex-col items-center justify-center text-center gap-3 pt-20 px-6">
-            <p className="text-5xl">🗓️</p>
-            <p className="text-text-primary font-semibold">Tu agenda está vacía</p>
-            <p className="text-text-secondary text-sm">
-              Agregá tu primer examen, entrega o recordatorio con el botón +.
-            </p>
-          </div>
+        {/* ── Vista Próximos ── */}
+        {view === 'proximos' && !showLoading && (
+          <>
+            {showEmptyEvents ? (
+              <div className="flex flex-col items-center justify-center text-center gap-3 pt-20 px-6">
+                <p className="text-5xl">🗓️</p>
+                <p className="text-text-primary font-semibold">Tu agenda está vacía</p>
+                <p className="text-text-secondary text-sm">
+                  Agregá tu primer examen, entrega o recordatorio con el botón +.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {GROUP_ORDER.map(group => {
+                  const groupEvents = active.filter(e => groupOf(e) === group)
+                  if (groupEvents.length === 0) return null
+                  return (
+                    <section key={group}>
+                      <h2
+                        className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${
+                          group === 'vencido' ? 'text-red-400' : 'text-text-secondary'
+                        }`}
+                      >
+                        {GROUP_LABELS[group]}
+                      </h2>
+                      <div className="space-y-2">
+                        {groupEvents.map(event => (
+                          <AgendaEventCard
+                            key={event.id}
+                            event={event}
+                            subjectName={subjectName(event.subject_id)}
+                            onToggle={toggleComplete}
+                            onClick={openEditEvent}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  )
+                })}
+
+                {completed.length > 0 && (
+                  <section>
+                    <h2 className="text-xs font-bold uppercase tracking-wider mb-2.5 text-text-secondary">
+                      Completados
+                    </h2>
+                    <div className="space-y-2">
+                      {completed.map(event => (
+                        <AgendaEventCard
+                          key={event.id}
+                          event={event}
+                          subjectName={subjectName(event.subject_id)}
+                          onToggle={toggleComplete}
+                          onClick={openEditEvent}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {active.length === 0 && completed.length === 0 && (
+                  <p className="text-center text-text-secondary text-sm pt-12">
+                    No hay eventos de este tipo.
+                  </p>
+                )}
+              </div>
+            )}
+          </>
         )}
 
-        {!showLoading && !showEmpty && (
-          <div className="space-y-6">
-            {GROUP_ORDER.map(group => {
-              const groupEvents = active.filter(e => groupOf(e) === group)
-              if (groupEvents.length === 0) return null
-              return (
-                <section key={group}>
-                  <h2
-                    className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${
-                      group === 'vencido' ? 'text-red-400' : 'text-text-secondary'
-                    }`}
-                  >
-                    {GROUP_LABELS[group]}
-                  </h2>
-                  <div className="space-y-2">
-                    {groupEvents.map(event => (
-                      <AgendaEventCard
-                        key={event.id}
-                        event={event}
-                        subjectName={subjectName(event.subject_id)}
-                        onToggle={toggleComplete}
-                        onClick={openEdit}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )
-            })}
-
-            {completed.length > 0 && (
-              <section>
-                <h2 className="text-xs font-bold uppercase tracking-wider mb-2.5 text-text-secondary">
-                  Completados
-                </h2>
-                <div className="space-y-2">
-                  {completed.map(event => (
-                    <AgendaEventCard
-                      key={event.id}
-                      event={event}
-                      subjectName={subjectName(event.subject_id)}
-                      onToggle={toggleComplete}
-                      onClick={openEdit}
-                    />
-                  ))}
-                </div>
-              </section>
+        {/* ── Vista Horario ── */}
+        {view === 'horario' && !showLoading && (
+          <>
+            {showEmptySchedule ? (
+              <div className="flex flex-col items-center justify-center text-center gap-3 pt-20 px-6">
+                <p className="text-5xl">📅</p>
+                <p className="text-text-primary font-semibold">Sin horario cargado</p>
+                <p className="text-text-secondary text-sm">
+                  Agregá los días y horas en que cursás cada materia con el botón +.
+                </p>
+              </div>
+            ) : (
+              <WeeklySchedule
+                slots={schedule.slots}
+                subjectName={id => subjectName(id)}
+                onSlotClick={openEditSlot}
+              />
             )}
-
-            {active.length === 0 && completed.length === 0 && (
-              <p className="text-center text-text-secondary text-sm pt-12">
-                No hay eventos de este tipo.
-              </p>
-            )}
-          </div>
+          </>
         )}
       </div>
 
       {/* FAB */}
       <button
-        onClick={openNew}
-        aria-label="Nuevo evento"
+        onClick={view === 'proximos' ? openNewEvent : openNewSlot}
+        aria-label={view === 'proximos' ? 'Nuevo evento' : 'Nuevo bloque'}
         className="fixed bottom-24 right-5 z-30 w-14 h-14 rounded-full bg-accent text-white text-3xl flex items-center justify-center shadow-lg shadow-accent/30 active:scale-95 transition-transform"
       >
         +
       </button>
 
-      {/* Sheet crear/editar */}
-      <BottomSheet isOpen={sheetOpen} onClose={closeSheet}>
+      {/* Sheet evento */}
+      <BottomSheet isOpen={eventSheetOpen} onClose={closeEventSheet}>
         <AgendaEventForm
-          key={editing?.id ?? 'new'}
-          editing={editing}
+          key={editingEvent?.id ?? 'new'}
+          editing={editingEvent}
           subjects={subjectOptions}
           onSubmit={input => {
-            if (editing) updateEvent(editing.id, input)
+            if (editingEvent) updateEvent(editingEvent.id, input)
             else createEvent(input)
-            closeSheet()
+            closeEventSheet()
           }}
           onDelete={deleteEvent}
-          onClose={closeSheet}
+          onClose={closeEventSheet}
+        />
+      </BottomSheet>
+
+      {/* Sheet bloque de horario */}
+      <BottomSheet isOpen={slotSheetOpen} onClose={closeSlotSheet}>
+        <ScheduleForm
+          key={editingSlot?.id ?? 'new-slot'}
+          editing={editingSlot}
+          subjects={subjectOptions}
+          onSubmit={input => {
+            if (editingSlot) schedule.updateSlot(editingSlot.id, input)
+            else schedule.createSlot(input)
+            closeSlotSheet()
+          }}
+          onDelete={schedule.deleteSlot}
+          onClose={closeSlotSheet}
         />
       </BottomSheet>
 
