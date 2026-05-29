@@ -98,3 +98,30 @@ export const WEEKDAYS: { value: number; short: string; full: string }[] = [
 export function formatTime(time: string): string {
   return time.slice(0, 5)
 }
+
+/** Minutos desde medianoche para un 'HH:MM'. */
+export function timeToMinutes(time: string): number {
+  const [h, m] = formatTime(time).split(':').map(Number)
+  return h * 60 + m
+}
+
+/** 'HH:MM' a partir de minutos desde medianoche. */
+export function minutesToTime(min: number): string {
+  const clamped = Math.max(0, Math.min(min, 23 * 60 + 59))
+  const h = Math.floor(clamped / 60)
+  const m = clamped % 60
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+}
+
+/** ¿Se solapan dos rangos horarios 'HH:MM'? (comparten algún minuto) */
+export function timeRangesOverlap(s1: string, e1: string, s2: string, e2: string): boolean {
+  return s1 < e2 && s2 < e1
+}
+
+/** Opciones de hora cada 30 min entre 07:00 y 22:30 (más extras puntuales). */
+export function timeStepOptions(...extras: string[]): string[] {
+  const set = new Set<string>()
+  for (let m = 7 * 60; m <= 22 * 60 + 30; m += 30) set.add(minutesToTime(m))
+  extras.forEach(e => e && set.add(formatTime(e)))
+  return [...set].sort()
+}

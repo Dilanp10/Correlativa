@@ -238,6 +238,8 @@ export default function AgendaPage() {
           key={editingSlot?.id ?? 'new-slot'}
           editing={editingSlot}
           subjects={subjectOptions}
+          existingSlots={schedule.slots}
+          subjectName={id => subjectName(id)}
           onSubmit={inputs => {
             if (editingSlot) schedule.updateSlot(editingSlot.id, inputs[0])
             else inputs.forEach(input => schedule.createSlot(input))
