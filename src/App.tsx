@@ -84,7 +84,11 @@ export default function App() {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        loadUserCareer(session.user.id)
+        // Diferimos fuera del callback: hacer await de queries de Supabase
+        // dentro de onAuthStateChange puede trabar la sesión (deadlock conocido
+        // de supabase-js v2, ver docs de onAuthStateChange).
+        const userId = session.user.id
+        setTimeout(() => loadUserCareer(userId), 0)
       } else {
         resetCareer()
       }
