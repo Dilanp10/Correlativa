@@ -9,34 +9,74 @@ interface SubjectOption {
   name: string
 }
 
+interface DaySelection {
+  weekday: number
+  start: string
+  end: string
+}
+
 interface Props {
   editing: ClassSchedule | null
   subjects: SubjectOption[]
-  onSubmit: (input: ScheduleInput) => void
+  onSubmit: (inputs: ScheduleInput[]) => void
   onDelete: (id: string) => void
   onClose: () => void
 }
 
+const DEFAULT_TIMES = { start: '08:00', end: '10:00' }
+
 export default function ScheduleForm({ editing, subjects, onSubmit, onDelete, onClose }: Props) {
   const [subjectId, setSubjectId] = useState(editing?.subject_id ?? '')
-  const [weekday, setWeekday] = useState(editing?.weekday ?? 1)
-  const [start, setStart] = useState(editing ? formatTime(editing.start_time) : '08:00')
-  const [end, setEnd] = useState(editing ? formatTime(editing.end_time) : '10:00')
+  const [days, setDays] = useState<DaySelection[]>(
+    editing
+      ? [{ weekday: editing.weekday, start: formatTime(editing.start_time), end: formatTime(editing.end_time) }]
+      : []
+  )
 
-  const canSubmit = subjectId.length > 0 && start.length > 0 && end.length > 0 && end > start
+  // En edición se opera un único bloque → selección de un solo día.
+  // Al crear se pueden marcar varios días, cada uno con su propio horario.
+  const isEditing = editing !== null
+
+  function toggleDay(weekday: number) {
+    setDays(prev => {
+      const existing = prev.find(d => d.weekday === weekday)
+      if (isEditing) {
+        const carry = prev[0] ?? DEFAULT_TIMES
+        return [{ weekday, start: carry.start, end: carry.end }]
+      }
+      if (existing) return prev.filter(d => d.weekday !== weekday)
+      return [...prev, { weekday, ...DEFAULT_TIMES }].sort((a, b) => a.weekday - b.weekday)
+    })
+  }
+
+  function setTime(weekday: number, field: 'start' | 'end', value: string) {
+    setDays(prev => prev.map(d => (d.weekday === weekday ? { ...d, [field]: value } : d)))
+  }
+
+  const allValid = days.length > 0 && days.every(d => d.end > d.start)
+  const canSubmit = subjectId.length > 0 && allValid
 
   function handleSubmit() {
     if (!canSubmit) return
-    onSubmit({ subject_id: subjectId, weekday, start_time: start, end_time: end })
+    onSubmit(
+      days.map(d => ({
+        subject_id: subjectId,
+        weekday: d.weekday,
+        start_time: d.start,
+        end_time: d.end,
+      }))
+    )
   }
 
   const fieldClass =
     'w-full bg-bg-elevated border border-muted rounded-xl px-3 py-2.5 text-text-primary text-sm focus:outline-none focus:border-accent transition-colors'
 
+  const dayLabel = (wd: number) => WEEKDAYS.find(d => d.value === wd)?.full ?? ''
+
   return (
     <div className="px-5 py-4 space-y-4 pb-8">
       <h3 className="text-lg font-bold text-text-primary">
-        {editing ? 'Editar bloque' : 'Nuevo bloque de cursada'}
+        {isEditing ? 'Editar bloque' : 'Agregar a tu horario'}
       </h3>
 
       {/* Materia */}
@@ -52,43 +92,67 @@ export default function ScheduleForm({ editing, subjects, onSubmit, onDelete, on
         </select>
       </div>
 
-      {/* Día */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">Día</label>
+      {/* Días */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+          {isEditing ? 'Día' : 'Días que cursás'}
+        </label>
         <div className="flex gap-1.5 flex-wrap">
-          {WEEKDAYS.map(day => (
-            <button
-              key={day.value}
-              onClick={() => setWeekday(day.value)}
-              className={`px-3 py-2 rounded-xl text-sm font-medium transition-all border ${
-                weekday === day.value
-                  ? 'bg-accent text-white border-accent'
-                  : 'bg-bg-elevated text-text-secondary border-muted/50 hover:text-text-primary'
-              }`}
-            >
-              {day.short}
-            </button>
-          ))}
+          {WEEKDAYS.map(day => {
+            const selected = days.some(d => d.weekday === day.value)
+            return (
+              <button
+                key={day.value}
+                onClick={() => toggleDay(day.value)}
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all border ${
+                  selected
+                    ? 'bg-accent text-white border-accent'
+                    : 'bg-bg-elevated text-text-secondary border-muted/50 hover:text-text-primary'
+                }`}
+              >
+                {day.short}
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {/* Horario */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">Horario</label>
-        <div className="flex items-center gap-2">
-          <input type="time" value={start} onChange={e => setStart(e.target.value)} className={`${fieldClass} flex-1`} />
-          <span className="text-text-secondary">–</span>
-          <input type="time" value={end} onChange={e => setEnd(e.target.value)} className={`${fieldClass} flex-1`} />
+      {/* Horario por cada día seleccionado */}
+      {days.length > 0 && (
+        <div className="space-y-2.5">
+          <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+            Horario {days.length > 1 ? 'de cada día' : ''}
+          </label>
+          {days.map(d => (
+            <div key={d.weekday} className="rounded-xl bg-bg-elevated border border-muted/40 px-3 py-2.5">
+              <p className="text-sm font-medium text-text-primary mb-1.5">{dayLabel(d.weekday)}</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="time"
+                  value={d.start}
+                  onChange={e => setTime(d.weekday, 'start', e.target.value)}
+                  className="flex-1 bg-bg-surface border border-muted rounded-lg px-2.5 py-2 text-text-primary text-sm focus:outline-none focus:border-accent"
+                />
+                <span className="text-text-secondary">–</span>
+                <input
+                  type="time"
+                  value={d.end}
+                  onChange={e => setTime(d.weekday, 'end', e.target.value)}
+                  className="flex-1 bg-bg-surface border border-muted rounded-lg px-2.5 py-2 text-text-primary text-sm focus:outline-none focus:border-accent"
+                />
+              </div>
+              {d.end <= d.start && (
+                <p className="text-xs text-red-400 mt-1">La hora de fin debe ser posterior a la de inicio.</p>
+              )}
+            </div>
+          ))}
         </div>
-        {end <= start && end.length > 0 && (
-          <p className="text-xs text-red-400">La hora de fin debe ser posterior a la de inicio.</p>
-        )}
-      </div>
+      )}
 
       {/* Acciones */}
       <div className="flex gap-2 pt-1">
         <Button onClick={handleSubmit} disabled={!canSubmit} className="flex-1">
-          {editing ? 'Guardar cambios' : 'Agregar al horario'}
+          {isEditing ? 'Guardar cambios' : 'Agregar al horario'}
         </Button>
         {editing && (
           <button

@@ -238,9 +238,9 @@ export default function AgendaPage() {
           key={editingSlot?.id ?? 'new-slot'}
           editing={editingSlot}
           subjects={subjectOptions}
-          onSubmit={input => {
-            if (editingSlot) schedule.updateSlot(editingSlot.id, input)
-            else schedule.createSlot(input)
+          onSubmit={inputs => {
+            if (editingSlot) schedule.updateSlot(editingSlot.id, inputs[0])
+            else inputs.forEach(input => schedule.createSlot(input))
             closeSlotSheet()
           }}
           onDelete={schedule.deleteSlot}
