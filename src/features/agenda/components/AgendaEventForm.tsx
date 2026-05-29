@@ -63,11 +63,6 @@ export default function AgendaEventForm({ editing, subjects, onSubmit, onDelete,
   const selectedIsApproved = subjects.find(s => s.id === subjectId)?.approved ?? false
   const canSubmit = title.trim().length > 0 && date.length > 0 && !selectedIsApproved
 
-  // ── DEBUG temporal (sacar luego) ──────────────────────────────────────────
-  const approvedCount = subjects.filter(s => s.approved).length
-  const approvedNames = subjects.filter(s => s.approved).map(s => s.name).join(', ')
-  // ──────────────────────────────────────────────────────────────────────────
-
   function handleSubmit() {
     if (!canSubmit) return
     const timePart = allDay ? '12:00' : time
@@ -125,12 +120,6 @@ export default function AgendaEventForm({ editing, subjects, onSubmit, onDelete,
         <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">
           Materia (opcional)
         </label>
-
-        {/* DEBUG temporal: sacar después */}
-        <div className="text-[10px] text-pink-400 bg-pink-500/10 rounded px-2 py-1">
-          DEBUG: {subjects.length} opciones · {approvedCount} aprobadas/promocionadas
-          {approvedCount > 0 && <> · {approvedNames}</>}
-        </div>
 
         <select value={subjectId} onChange={handleSubjectChange} className={fieldClass}>
           <option value="">Sin materia</option>
