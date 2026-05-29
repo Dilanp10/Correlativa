@@ -57,6 +57,8 @@ export default function ScheduleForm({
       ? [{ weekday: editing.weekday, start: formatTime(editing.start_time), end: formatTime(editing.end_time) }]
       : []
   )
+  // Días en los que el usuario eligió "Otro" (fin manual).
+  const [manualDays, setManualDays] = useState<number[]>([])
 
   function toggleDay(weekday: number) {
     setDays(prev => {
@@ -82,9 +84,25 @@ export default function ScheduleForm({
   }
 
   function setDuration(weekday: number, mins: number) {
+    setManualDays(prev => prev.filter(w => w !== weekday))
     setDays(prev =>
       prev.map(d => (d.weekday === weekday ? { ...d, end: minutesToTime(timeToMinutes(d.start) + mins) } : d))
     )
+  }
+
+  function setEndManual(weekday: number, value: string) {
+    setDays(prev => prev.map(d => (d.weekday === weekday ? { ...d, end: value } : d)))
+  }
+
+  // ¿La duración coincide con algún chip predefinido?
+  function matchesPreset(day: DaySelection): boolean {
+    const dur = timeToMinutes(day.end) - timeToMinutes(day.start)
+    return DURATIONS.some(d => d.mins === dur)
+  }
+
+  // Mostrar el campo manual si eligió "Otro" o si la duración no es estándar.
+  function showManual(day: DaySelection): boolean {
+    return manualDays.includes(day.weekday) || !matchesPreset(day)
   }
 
   // Choque con otro bloque ya existente del mismo día (excluyendo el que se edita).
@@ -205,7 +223,7 @@ export default function ScheduleForm({
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs text-text-secondary w-12 shrink-0">Dura</span>
                   {DURATIONS.map(dur => {
-                    const isActive = timeToMinutes(d.end) - timeToMinutes(d.start) === dur.mins
+                    const isActive = !showManual(d) && timeToMinutes(d.end) - timeToMinutes(d.start) === dur.mins
                     return (
                       <button
                         key={dur.mins}
@@ -220,7 +238,36 @@ export default function ScheduleForm({
                       </button>
                     )
                   })}
+                  <button
+                    onClick={() => setManualDays(prev => (prev.includes(d.weekday) ? prev : [...prev, d.weekday]))}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${
+                      showManual(d)
+                        ? 'bg-accent text-white border-accent'
+                        : 'bg-bg-surface text-text-secondary border-muted/50 hover:text-text-primary'
+                    }`}
+                  >
+                    Otro
+                  </button>
                 </div>
+
+                {/* Fin manual */}
+                {showManual(d) && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs text-text-secondary w-12 shrink-0">Termina</span>
+                    <input
+                      type="time"
+                      value={d.end}
+                      onChange={e => setEndManual(d.weekday, e.target.value)}
+                      className="flex-1 bg-bg-surface border border-muted rounded-lg px-2.5 py-2 text-text-primary text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                )}
+
+                {d.end <= d.start && (
+                  <p className="text-xs text-red-400 mt-2">
+                    La hora de fin debe ser posterior a la de inicio.
+                  </p>
+                )}
 
                 {conflict && (
                   <p className="text-xs text-red-400 mt-2">
