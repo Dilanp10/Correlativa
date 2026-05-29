@@ -43,8 +43,30 @@ export default function AgendaEventForm({ editing, subjects, onSubmit, onDelete,
   const [date, setDate] = useState(initial.date)
   const [time, setTime] = useState(initial.time)
   const [notes, setNotes] = useState(editing?.notes ?? '')
+  const [subjectError, setSubjectError] = useState<string | null>(null)
 
-  const canSubmit = title.trim().length > 0 && date.length > 0
+  // Guard defensivo: aunque <option disabled> debería bloquear, en algunos
+  // navegadores/contextos la selección igual se dispara. Rechazamos manualmente
+  // y mostramos un mensaje claro.
+  function handleSubjectChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const id = e.target.value
+    const chosen = subjects.find(s => s.id === id)
+    if (chosen?.approved) {
+      setSubjectError(`${chosen.name} ya está aprobada — no podés crear eventos para ella.`)
+      return
+    }
+    setSubjectError(null)
+    setSubjectId(id)
+  }
+
+  // Bloquea el submit si quedó seleccionada una aprobada (por las dudas).
+  const selectedIsApproved = subjects.find(s => s.id === subjectId)?.approved ?? false
+  const canSubmit = title.trim().length > 0 && date.length > 0 && !selectedIsApproved
+
+  // ── DEBUG temporal (sacar luego) ──────────────────────────────────────────
+  const approvedCount = subjects.filter(s => s.approved).length
+  const approvedNames = subjects.filter(s => s.approved).map(s => s.name).join(', ')
+  // ──────────────────────────────────────────────────────────────────────────
 
   function handleSubmit() {
     if (!canSubmit) return
@@ -103,18 +125,23 @@ export default function AgendaEventForm({ editing, subjects, onSubmit, onDelete,
         <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">
           Materia (opcional)
         </label>
-        <select value={subjectId} onChange={e => setSubjectId(e.target.value)} className={fieldClass}>
+
+        {/* DEBUG temporal: sacar después */}
+        <div className="text-[10px] text-pink-400 bg-pink-500/10 rounded px-2 py-1">
+          DEBUG: {subjects.length} opciones · {approvedCount} aprobadas/promocionadas
+          {approvedCount > 0 && <> · {approvedNames}</>}
+        </div>
+
+        <select value={subjectId} onChange={handleSubjectChange} className={fieldClass}>
           <option value="">Sin materia</option>
           {subjects.map(s => (
-            // Las aprobadas/promocionadas se muestran pero no se pueden elegir
-            // para un evento nuevo. Si ya estaba seleccionada (edición de un
-            // evento previo), HTML permite mostrarla seleccionada igual.
             <option key={s.id} value={s.id} disabled={s.approved}>
               {s.name}
               {s.approved ? ' — (ya aprobada)' : ''}
             </option>
           ))}
         </select>
+        {subjectError && <p className="text-xs text-red-400">{subjectError}</p>}
       </div>
 
       {/* Fecha + hora */}
