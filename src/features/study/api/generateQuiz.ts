@@ -52,12 +52,9 @@ export async function generateQuiz(
       } catch {
         // body no era JSON
       }
-      console.error('[generateQuiz] error del Edge Function:', {
-        name: (error as Error).name,
-        message: (error as Error).message,
-        status,
-        serverBody,
-      })
+      console.error(
+        `[generateQuiz] name=${(error as Error).name} | message=${(error as Error).message} | status=${status} | body=${JSON.stringify(serverBody)}`
+      )
 
       const body = serverBody as { error?: string; message?: string } | null
       const serverError = body?.error

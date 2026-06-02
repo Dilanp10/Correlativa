@@ -114,20 +114,22 @@ async function callModel(userPrompt: string, token: string): Promise<unknown> {
 
 // ── Handler principal ─────────────────────────────────────────────────────────
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
+}
+
 Deno.serve(async (req: Request) => {
-  // CORS preflight
+  // CORS preflight — responder 204 con todos los headers necesarios.
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, content-type',
-      },
-    })
+    return new Response(null, { status: 204, headers: CORS_HEADERS })
   }
 
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
+    ...CORS_HEADERS,
   }
 
   // ── 1. Auth ───────────────────────────────────────────────────────────────
