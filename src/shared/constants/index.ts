@@ -17,5 +17,6 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   TREE: '/tree',
   AGENDA: '/agenda',
+  STUDY: '/estudiar',
   PROFILE: '/profile',
 } as const

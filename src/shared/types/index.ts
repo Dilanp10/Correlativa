@@ -107,6 +107,24 @@ export interface StreakState {
   freezeUsedMonth: string | null
 }
 
+export interface UserStudySession {
+  id: string
+  user_id: string
+  subject_id: string
+  completed_at: string
+  correct_count: number
+  total_questions: number
+}
+
+export interface UserStudySession {
+  id: string
+  user_id: string
+  subject_id: string
+  completed_at: string
+  correct_count: number
+  total_questions: number
+}
+
 // ── Tipos compuestos ──────────────────────────────────────────────────────────
 
 export interface SubjectWithCorrelatives extends Subject {

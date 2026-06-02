@@ -1,4 +1,4 @@
-import type { UserSubject, AgendaEvent } from '@/shared/types'
+import type { UserSubject, AgendaEvent, UserStudySession } from '@/shared/types'
 
 /** Valores de XP por acción/estado. Tunables sin romper nada. */
 export const XP = {
@@ -6,6 +6,8 @@ export const XP = {
   PROMOCIONADA: 130,
   CURSANDO: 20,
   AGENDA_EVENT_COMPLETED: 15,
+  STUDY_SESSION: 25,
+  STUDY_SESSION_PERFECT: 10,
 } as const
 
 export interface GamificationState {
@@ -24,18 +26,26 @@ const MAX_LEVEL = 100
  * XP total derivada del estado actual del usuario. Función pura.
  * O(n + m) en cantidad de materias y eventos.
  */
-export function computeXp(userSubjects: UserSubject[], events: AgendaEvent[]): number {
+export function computeXp(
+  userSubjects: UserSubject[],
+  events: AgendaEvent[],
+  sessions: UserStudySession[] = []
+): number {
   let xp = 0
 
   for (const us of userSubjects) {
     if (us.status === 'promocionada') xp += XP.PROMOCIONADA
     else if (us.status === 'aprobada') xp += XP.APROBADA
     else if (us.status === 'cursando') xp += XP.CURSANDO
-    // El resto de estados aporta 0 XP en esta iteración.
   }
 
   for (const e of events) {
     if (e.completed) xp += XP.AGENDA_EVENT_COMPLETED
+  }
+
+  for (const s of sessions) {
+    xp += XP.STUDY_SESSION
+    if (s.correct_count === s.total_questions) xp += XP.STUDY_SESSION_PERFECT
   }
 
   return xp
@@ -76,7 +86,8 @@ export function computeLevel(totalXp: number): GamificationState {
 /** Entry point que combina cómputo de XP y de nivel. */
 export function computeGamification(
   userSubjects: UserSubject[],
-  events: AgendaEvent[]
+  events: AgendaEvent[],
+  sessions: UserStudySession[] = []
 ): GamificationState {
-  return computeLevel(computeXp(userSubjects, events))
+  return computeLevel(computeXp(userSubjects, events, sessions))
 }

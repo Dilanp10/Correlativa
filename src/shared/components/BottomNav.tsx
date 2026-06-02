@@ -39,6 +39,16 @@ const navItems = [
     ),
   },
   {
+    to: ROUTES.STUDY,
+    label: 'Estudiar',
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44A2.5 2.5 0 0 1 2.5 16.5v-10A2.5 2.5 0 0 1 5 4h1.5" />
+        <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44A2.5 2.5 0 0 0 21.5 16.5v-10A2.5 2.5 0 0 0 19 4h-1.5" />
+      </svg>
+    ),
+  },
+  {
     to: ROUTES.PROFILE,
     label: 'Perfil',
     icon: (active: boolean) => (
@@ -59,7 +69,7 @@ export default function BottomNav() {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-colors ${
+              `flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-xl transition-colors ${
                 isActive ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
               }`
             }

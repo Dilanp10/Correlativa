@@ -6,6 +6,7 @@ import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
 import { useAgendaStore } from '@/features/agenda/store/agendaStore'
 import { useScheduleStore } from '@/features/agenda/store/scheduleStore'
 import { useStreakStore } from '@/features/streaks/store/streakStore'
+import { useSessionsStore } from '@/features/study/store/sessionsStore'
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
 import { signOut } from '@/shared/lib/supabase/auth'
 import { supabase } from '@/shared/lib/supabase/client'
@@ -22,6 +23,7 @@ export default function ProfilePage() {
   const resetAgenda = useAgendaStore(s => s.reset)
   const resetSchedule = useScheduleStore(s => s.reset)
   const resetStreak = useStreakStore(s => s.reset)
+  const resetSessions = useSessionsStore(s => s.reset)
   const getProgress = useSubjectsStore(s => s.getProgress)
   useSubjects()
 
@@ -39,6 +41,7 @@ export default function ProfilePage() {
     resetAgenda()
     resetSchedule()
     resetStreak()
+    resetSessions()
     navigate(ROUTES.LOGIN)
   }
 

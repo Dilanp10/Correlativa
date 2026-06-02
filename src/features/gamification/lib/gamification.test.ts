@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { UserSubject, AgendaEvent, SubjectStatus } from '@/shared/types'
+import type { UserSubject, AgendaEvent, UserStudySession, SubjectStatus } from '@/shared/types'
 import { computeXp, xpToAdvance, computeLevel, computeGamification, XP } from './gamification'
 
 function userSubject(status: SubjectStatus): UserSubject {
@@ -129,5 +129,55 @@ describe('computeGamification', () => {
     expect(s.totalXp).toBe(100)
     expect(s.level).toBe(2)
     expect(s.xpForLevel).toBe(150)
+  })
+})
+
+// ── Helper para sesiones ─────────────────────────────────────────────────────
+function session(correct: number, total: number): UserStudySession {
+  return {
+    id: 'ss-' + Math.random(),
+    user_id: 'u',
+    subject_id: 's',
+    completed_at: new Date().toISOString(),
+    correct_count: correct,
+    total_questions: total,
+  }
+}
+
+describe('computeXp — sesiones de estudio', () => {
+  it('da 0 sin sesiones', () => {
+    expect(computeXp([], [], [])).toBe(0)
+  })
+
+  it('sesión normal suma XP.STUDY_SESSION', () => {
+    expect(computeXp([], [], [session(3, 5)])).toBe(XP.STUDY_SESSION)
+  })
+
+  it('sesión perfecta suma STUDY_SESSION + STUDY_SESSION_PERFECT', () => {
+    expect(computeXp([], [], [session(5, 5)])).toBe(XP.STUDY_SESSION + XP.STUDY_SESSION_PERFECT)
+  })
+
+  it('varias sesiones acumulan correctamente', () => {
+    const xp = computeXp([], [], [session(5, 5), session(3, 5), session(5, 5)])
+    const expected =
+      XP.STUDY_SESSION + XP.STUDY_SESSION_PERFECT +
+      XP.STUDY_SESSION +
+      XP.STUDY_SESSION + XP.STUDY_SESSION_PERFECT
+    expect(xp).toBe(expected)
+  })
+
+  it('sesión con 0 correctas igual suma la base', () => {
+    expect(computeXp([], [], [session(0, 5)])).toBe(XP.STUDY_SESSION)
+  })
+
+  it('combina materias + eventos + sesiones', () => {
+    const xp = computeXp(
+      [userSubject('aprobada')],
+      [event(true)],
+      [session(5, 5)]
+    )
+    expect(xp).toBe(
+      XP.APROBADA + XP.AGENDA_EVENT_COMPLETED + XP.STUDY_SESSION + XP.STUDY_SESSION_PERFECT
+    )
   })
 })

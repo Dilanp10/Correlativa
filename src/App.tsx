@@ -19,6 +19,7 @@ import StreakActivityConsumer from '@/features/streaks/components/StreakActivity
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const TreePage      = lazy(() => import('@/pages/TreePage'))
 const AgendaPage    = lazy(() => import('@/pages/AgendaPage'))
+const StudyPage     = lazy(() => import('@/pages/StudyPage'))
 const ProfilePage   = lazy(() => import('@/pages/ProfilePage'))
 
 async function loadUserCareer(userId: string) {
@@ -148,6 +149,16 @@ export default function App() {
               <ProtectedRoute>
                 <CareerRequiredRoute>
                   <AgendaPage />
+                </CareerRequiredRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/estudiar"
+            element={
+              <ProtectedRoute>
+                <CareerRequiredRoute>
+                  <StudyPage />
                 </CareerRequiredRoute>
               </ProtectedRoute>
             }
