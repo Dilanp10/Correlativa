@@ -41,14 +41,29 @@ export async function generateQuiz(
       body: { subjectName, topic: topic?.trim() || undefined },
     })
 
-    // Error de red o de Supabase antes de llegar al Edge Function
+    // Error HTTP del Edge Function: supabase-js lo envuelve en FunctionsHttpError,
+    // donde error.context es el Response. Hay que leer status y body de ahí.
     if (error) {
-      // Supabase envuelve los errores HTTP del Edge Function acá
-      const status = (error as { context?: { status?: number } }).context?.status
-      if (status === 401) return fail('unauthorized')
-      if (status === 429) return fail('rate_limit')
-      if (status === 400) return fail('invalid_input')
-      if (status === 502) return fail('ai_invalid_response')
+      const ctx = (error as { context?: Response }).context
+      const status = ctx?.status
+      let serverBody: unknown = null
+      try {
+        serverBody = ctx ? await ctx.clone().json() : null
+      } catch {
+        // body no era JSON
+      }
+      console.error('[generateQuiz] error del Edge Function:', {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        status,
+        serverBody,
+      })
+
+      const serverError = (serverBody as { error?: string } | null)?.error
+      if (status === 401 || serverError === 'unauthorized') return fail('unauthorized')
+      if (status === 429 || serverError === 'rate_limit') return fail('rate_limit')
+      if (status === 400 || serverError === 'invalid_input') return fail('invalid_input')
+      if (status === 502 || serverError === 'ai_invalid_response') return fail('ai_invalid_response')
       return fail('internal')
     }
 
