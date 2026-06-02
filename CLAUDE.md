@@ -305,3 +305,8 @@ Cuando el usuario diga "arrancá" o "empezá":
 1. Confirmá que leíste este archivo y entendiste el proyecto.
 2. Arrancá con el **Paso 1: PRD.md**.
 3. No hagas nada más hasta que el PRD esté aprobado.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
