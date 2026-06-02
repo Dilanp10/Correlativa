@@ -1,8 +1,10 @@
 // Supabase Edge Function — generate-quiz
 // Genera un quiz de 5 preguntas usando GitHub Models (gpt-4o-mini).
 // Requiere: GITHUB_MODELS_TOKEN en los secrets del proyecto.
-
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+//
+// Auth: con "Verify JWT" activado en el dashboard, Supabase valida el JWT
+// del usuario ANTES de ejecutar esta función. Por eso no necesitamos el
+// cliente de supabase-js acá (evita la dependencia que rompía el bundle).
 
 const GITHUB_MODELS_URL = 'https://models.inference.ai.azure.com/chat/completions'
 const MODEL = 'gpt-4o-mini'
@@ -123,20 +125,11 @@ Deno.serve(async (req: Request) => {
     'Access-Control-Allow-Origin': '*',
   }
 
-  // ── 1. Validar JWT ──────────────────────────────────────────────────────────
+  // ── 1. Auth ───────────────────────────────────────────────────────────────
+  // Con "Verify JWT" activado, Supabase ya rechazó los requests sin token
+  // válido antes de llegar acá. Igual chequeamos que venga el header por las dudas.
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers })
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    global: { headers: { Authorization: authHeader } },
-  })
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
     return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers })
   }
 
