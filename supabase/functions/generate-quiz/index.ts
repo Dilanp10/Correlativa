@@ -98,7 +98,12 @@ async function callModel(userPrompt: string, token: string): Promise<unknown> {
   })
 
   if (response.status === 429) throw new Error('rate_limit')
-  if (!response.ok) throw new Error(`model_error:${response.status}`)
+  if (!response.ok) {
+    // Capturamos el cuerpo del error de GitHub Models para diagnóstico.
+    const errBody = await response.text()
+    console.error(`[generate-quiz] GitHub Models respondió ${response.status}:`, errBody)
+    throw new Error(`model_error:${response.status}:${errBody.slice(0, 300)}`)
+  }
 
   const json = await response.json()
   const content = json?.choices?.[0]?.message?.content
@@ -153,7 +158,14 @@ Deno.serve(async (req: Request) => {
   const token = Deno.env.get('GITHUB_MODELS_TOKEN')
   if (!token) {
     console.error('[generate-quiz] GITHUB_MODELS_TOKEN no configurado')
-    return new Response(JSON.stringify({ error: 'internal', message: 'Configuración de servidor incompleta.' }), { status: 500, headers })
+    // DIAGNÓSTICO: mensaje explícito para identificar el problema del secret.
+    return new Response(
+      JSON.stringify({
+        error: 'internal',
+        message: 'DEBUG: el secret GITHUB_MODELS_TOKEN no está disponible en el Edge Function. Verificá el nombre del secret y re-deployá la función.',
+      }),
+      { status: 500, headers }
+    )
   }
 
   // ── 4. Construir prompt ──────────────────────────────────────────────────────
@@ -191,8 +203,12 @@ Deno.serve(async (req: Request) => {
   }
 
   console.error('[generate-quiz] error final después de reintentos:', lastError)
+  // DIAGNÓSTICO: incluimos el detalle real del error para identificar la causa.
   return new Response(
-    JSON.stringify({ error: 'ai_invalid_response', message: 'El modelo devolvió un quiz mal formado. Probá con otro tema.' }),
+    JSON.stringify({
+      error: 'ai_invalid_response',
+      message: `DEBUG: ${lastError?.message ?? 'error desconocido'}`,
+    }),
     { status: 502, headers }
   )
 })

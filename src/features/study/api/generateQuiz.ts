@@ -59,7 +59,12 @@ export async function generateQuiz(
         serverBody,
       })
 
-      const serverError = (serverBody as { error?: string } | null)?.error
+      const body = serverBody as { error?: string; message?: string } | null
+      const serverError = body?.error
+      // DIAGNÓSTICO: si el backend mandó un mensaje DEBUG, lo mostramos tal cual.
+      if (body?.message?.startsWith('DEBUG:')) {
+        return { ok: false, error: 'internal', message: body.message }
+      }
       if (status === 401 || serverError === 'unauthorized') return fail('unauthorized')
       if (status === 429 || serverError === 'rate_limit') return fail('rate_limit')
       if (status === 400 || serverError === 'invalid_input') return fail('invalid_input')
