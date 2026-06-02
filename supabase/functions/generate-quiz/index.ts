@@ -160,12 +160,8 @@ Deno.serve(async (req: Request) => {
   const token = Deno.env.get('GITHUB_MODELS_TOKEN')
   if (!token) {
     console.error('[generate-quiz] GITHUB_MODELS_TOKEN no configurado')
-    // DIAGNÓSTICO: mensaje explícito para identificar el problema del secret.
     return new Response(
-      JSON.stringify({
-        error: 'internal',
-        message: 'DEBUG: el secret GITHUB_MODELS_TOKEN no está disponible en el Edge Function. Verificá el nombre del secret y re-deployá la función.',
-      }),
+      JSON.stringify({ error: 'internal', message: 'Configuración de servidor incompleta.' }),
       { status: 500, headers }
     )
   }
@@ -205,11 +201,10 @@ Deno.serve(async (req: Request) => {
   }
 
   console.error('[generate-quiz] error final después de reintentos:', lastError)
-  // DIAGNÓSTICO: incluimos el detalle real del error para identificar la causa.
   return new Response(
     JSON.stringify({
       error: 'ai_invalid_response',
-      message: `DEBUG: ${lastError?.message ?? 'error desconocido'}`,
+      message: 'El modelo devolvió un quiz mal formado. Probá con otro tema.',
     }),
     { status: 502, headers }
   )
