@@ -33,12 +33,12 @@ export default function TreePage() {
   return (
     <div className="bg-bg-base flex flex-col" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="px-5 pt-11 pb-2 shrink-0">
+      <div className="px-5 pt-11 pb-2 shrink-0 w-full max-w-md mx-auto">
         <h1 className="text-xl font-bold text-text-primary">Árbol de correlativas</h1>
       </div>
 
       {/* Leyenda */}
-      <div className="px-5 pb-2 shrink-0">
+      <div className="px-5 pb-2 shrink-0 w-full max-w-md mx-auto">
         <div className="flex items-center gap-4 flex-wrap">
           {([
             { icon: '🔒', label: 'Bloqueada',  color: 'text-text-secondary' },

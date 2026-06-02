@@ -55,7 +55,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-base flex flex-col pb-20">
+    <div className="min-h-screen bg-bg-base flex flex-col pb-20 max-w-md mx-auto w-full">
       {/* Header */}
       <div className="px-5 pt-12 pb-6">
         <h1 className="text-2xl font-bold text-text-primary">Perfil</h1>

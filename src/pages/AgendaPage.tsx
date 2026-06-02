@@ -82,7 +82,7 @@ export default function AgendaPage() {
   const showEmptySchedule = schedule.loaded && schedule.slots.length === 0
 
   return (
-    <div className="min-h-screen bg-bg-base flex flex-col pb-24">
+    <div className="min-h-screen bg-bg-base flex flex-col pb-24 max-w-md mx-auto w-full">
       {/* Header */}
       <div className="px-5 pt-12 pb-4">
         <h1 className="text-2xl font-bold text-text-primary">Agenda</h1>
@@ -222,14 +222,18 @@ export default function AgendaPage() {
         )}
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={view === 'proximos' ? openNewEvent : openNewSlot}
-        aria-label={view === 'proximos' ? 'Nuevo evento' : 'Nuevo bloque'}
-        className="fixed bottom-24 right-5 z-30 w-14 h-14 rounded-full bg-accent text-white text-3xl flex items-center justify-center shadow-lg shadow-accent/30 active:scale-95 transition-transform"
-      >
-        +
-      </button>
+      {/* FAB — alineado a la columna centrada, no al borde del viewport */}
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-md z-30 pointer-events-none">
+        <div className="flex justify-end pr-5">
+          <button
+            onClick={view === 'proximos' ? openNewEvent : openNewSlot}
+            aria-label={view === 'proximos' ? 'Nuevo evento' : 'Nuevo bloque'}
+            className="pointer-events-auto w-14 h-14 rounded-full bg-accent text-white text-3xl flex items-center justify-center shadow-lg shadow-accent/30 active:scale-95 transition-transform"
+          >
+            +
+          </button>
+        </div>
+      </div>
 
       {/* Sheet evento */}
       <BottomSheet isOpen={eventSheetOpen} onClose={closeEventSheet}>

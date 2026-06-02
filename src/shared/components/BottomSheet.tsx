@@ -23,11 +23,12 @@ export default function BottomSheet({ isOpen, onClose, children, title }: Bottom
           />
           <motion.div
             key="sheet"
-            className="fixed bottom-0 left-0 right-0 z-50 bg-bg-surface rounded-t-2xl max-h-[88vh] flex flex-col"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            className="fixed bottom-0 left-1/2 w-full max-w-md z-50 bg-bg-surface rounded-t-2xl max-h-[88vh] flex flex-col"
+            initial={{ y: '100%', x: '-50%' }}
+            animate={{ y: 0, x: '-50%' }}
+            exit={{ y: '100%', x: '-50%' }}
             transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             <div className="flex flex-col items-center pt-3 pb-2 px-5 shrink-0">
               <div className="w-10 h-1 rounded-full bg-muted mb-3" />

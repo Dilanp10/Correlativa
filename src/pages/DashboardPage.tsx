@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const progress = getProgress()
 
   return (
-    <div className="min-h-screen bg-bg-base flex flex-col pb-20">
+    <div className="min-h-screen bg-bg-base flex flex-col pb-20 max-w-md mx-auto w-full">
       {/* Header */}
       <div className="px-5 pt-12 pb-6">
         <div className="flex items-start justify-between gap-3">
