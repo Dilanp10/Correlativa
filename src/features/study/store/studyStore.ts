@@ -1,34 +1,40 @@
 import { create } from 'zustand'
 import type { Quiz, Answer, SessionResult } from '@/features/study/lib/quiz'
+import type { ExerciseSet, StudyMode } from '@/features/study/lib/exercise'
 import type { GenerateQuizError } from '@/features/study/api/generateQuiz'
 
 export type StudyPhase = 'picking' | 'generating' | 'playing' | 'summary' | 'error'
 
 interface StudyStore {
   phase: StudyPhase
+  mode: StudyMode
 
   // Inputs del picking
   selectedSubjectId: string | null
   topic: string
 
-  // Quiz en curso
+  // Quiz en curso (mode === 'quiz')
   quiz: Quiz | null
-  currentIndex: number
   answers: Answer[]
 
-  // Resultado al terminar
-  result: SessionResult | null
+  // Ejercicios en curso (mode === 'exercises')
+  exerciseSet: ExerciseSet | null
+  exerciseAnswers: string[]
 
-  // Error si phase === 'error'
+  currentIndex: number
+  result: SessionResult | null
   error: { code: GenerateQuizError; message: string } | null
 
   // Setters / acciones
+  setMode(m: StudyMode): void
   setSubjectId(id: string | null): void
   setTopic(t: string): void
   startGenerating(): void
   setQuiz(q: Quiz): void
+  setExerciseSet(s: ExerciseSet): void
   setError(e: { code: GenerateQuizError; message: string }): void
   answer(value: number | boolean): void
+  answerExercise(index: number, value: string): void
   next(): void
   finish(result: SessionResult): void
   resetToPicking(keepSubject?: boolean): void
@@ -37,13 +43,20 @@ interface StudyStore {
 
 export const useStudyStore = create<StudyStore>((set, get) => ({
   phase: 'picking',
+  mode: 'quiz',
   selectedSubjectId: null,
   topic: '',
   quiz: null,
-  currentIndex: 0,
   answers: [],
+  exerciseSet: null,
+  exerciseAnswers: [],
+  currentIndex: 0,
   result: null,
   error: null,
+
+  setMode(m) {
+    set({ mode: m })
+  },
 
   setSubjectId(id) {
     set({ selectedSubjectId: id })
@@ -54,11 +67,28 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
   },
 
   startGenerating() {
-    set({ phase: 'generating', quiz: null, currentIndex: 0, answers: [], result: null, error: null })
+    set({
+      phase: 'generating',
+      quiz: null,
+      answers: [],
+      exerciseSet: null,
+      exerciseAnswers: [],
+      currentIndex: 0,
+      result: null,
+      error: null,
+    })
   },
 
   setQuiz(q) {
     set({ quiz: q, phase: 'playing', answers: Array(q.questions.length).fill(null) })
+  },
+
+  setExerciseSet(s) {
+    set({
+      exerciseSet: s,
+      phase: 'playing',
+      exerciseAnswers: Array(s.exercises.length).fill(''),
+    })
   },
 
   setError(e) {
@@ -67,21 +97,23 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
 
   answer(value) {
     const { currentIndex, answers } = get()
-    // Bloquea si ya respondió esta pregunta
     if (answers[currentIndex] !== null) return
     const updated = [...answers]
     updated[currentIndex] = value
     set({ answers: updated })
   },
 
+  answerExercise(index, value) {
+    const updated = [...get().exerciseAnswers]
+    updated[index] = value
+    set({ exerciseAnswers: updated })
+  },
+
   next() {
-    const { currentIndex, quiz } = get()
-    if (!quiz) return
+    const { currentIndex, mode, quiz, exerciseSet } = get()
+    const total = mode === 'quiz' ? quiz?.questions.length ?? 0 : exerciseSet?.exercises.length ?? 0
     const nextIndex = currentIndex + 1
-    if (nextIndex < quiz.questions.length) {
-      set({ currentIndex: nextIndex })
-    }
-    // Si es la última pregunta, StudyPage llama a finish() tras ver el resultado
+    if (nextIndex < total) set({ currentIndex: nextIndex })
   },
 
   finish(result) {
@@ -89,12 +121,15 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
   },
 
   resetToPicking(keepSubject = true) {
-    const { selectedSubjectId } = get()
+    const { selectedSubjectId, mode } = get()
     set({
       phase: 'picking',
+      mode, // conserva el modo elegido
       quiz: null,
-      currentIndex: 0,
       answers: [],
+      exerciseSet: null,
+      exerciseAnswers: [],
+      currentIndex: 0,
       result: null,
       error: null,
       topic: '',
@@ -105,11 +140,14 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
   resetAll() {
     set({
       phase: 'picking',
+      mode: 'quiz',
       selectedSubjectId: null,
       topic: '',
       quiz: null,
-      currentIndex: 0,
       answers: [],
+      exerciseSet: null,
+      exerciseAnswers: [],
+      currentIndex: 0,
       result: null,
       error: null,
     })

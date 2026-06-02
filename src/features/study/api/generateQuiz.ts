@@ -1,6 +1,8 @@
 import { supabase } from '@/shared/lib/supabase/client'
 import type { Quiz } from '@/features/study/lib/quiz'
 import { isValidQuiz } from '@/features/study/lib/quiz'
+import type { ExerciseSet } from '@/features/study/lib/exercise'
+import { isValidExerciseSet } from '@/features/study/lib/exercise'
 
 export type GenerateQuizError =
   | 'invalid_input'
@@ -21,28 +23,34 @@ export interface GenerateQuizSuccess {
   quiz: Quiz
 }
 
-export type GenerateQuizResult = GenerateQuizSuccess | GenerateQuizFailure
-
-const ERROR_MESSAGES: Record<GenerateQuizError, string> = {
-  invalid_input: 'Los datos del quiz son inválidos. Revisá la materia y el tema.',
-  unauthorized: 'Tenés que estar logueado para generar un quiz.',
-  rate_limit: 'Alcanzaste el límite gratuito de quizzes por hoy. Probá más tarde.',
-  ai_invalid_response: 'Algo salió mal con la generación. Probá con otro tema o reintentá.',
-  network: 'No pudimos generar tu quiz. Revisá tu conexión y reintentá.',
-  internal: 'No pudimos generar tu quiz. Reintentá en un momento.',
+export interface GenerateExercisesSuccess {
+  ok: true
+  exerciseSet: ExerciseSet
 }
 
-export async function generateQuiz(
-  subjectName: string,
-  topic?: string
-): Promise<GenerateQuizResult> {
-  try {
-    const { data, error } = await supabase.functions.invoke('generate-quiz', {
-      body: { subjectName, topic: topic?.trim() || undefined },
-    })
+export type GenerateQuizResult = GenerateQuizSuccess | GenerateQuizFailure
+export type GenerateExercisesResult = GenerateExercisesSuccess | GenerateQuizFailure
 
-    // Error HTTP del Edge Function: supabase-js lo envuelve en FunctionsHttpError,
-    // donde error.context es el Response. Hay que leer status y body de ahí.
+const ERROR_MESSAGES: Record<GenerateQuizError, string> = {
+  invalid_input: 'Los datos son inválidos. Revisá la materia y el tema.',
+  unauthorized: 'Tenés que estar logueado para generar contenido.',
+  rate_limit: 'Alcanzaste el límite gratuito por hoy. Probá más tarde.',
+  ai_invalid_response: 'Algo salió mal con la generación. Probá con otro tema o reintentá.',
+  network: 'No pudimos generar el contenido. Revisá tu conexión y reintentá.',
+  internal: 'No pudimos generar el contenido. Reintentá en un momento.',
+}
+
+function fail(error: GenerateQuizError): GenerateQuizFailure {
+  return { ok: false, error, message: ERROR_MESSAGES[error] }
+}
+
+/** Llama al Edge Function y mapea los errores. Devuelve el data crudo o un failure. */
+async function invokeGenerate(
+  body: Record<string, unknown>
+): Promise<{ ok: true; data: unknown } | GenerateQuizFailure> {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-quiz', { body })
+
     if (error) {
       const ctx = (error as { context?: Response }).context
       const status = ctx?.status
@@ -53,11 +61,11 @@ export async function generateQuiz(
         // body no era JSON
       }
       console.error(
-        `[generateQuiz] name=${(error as Error).name} | message=${(error as Error).message} | status=${status} | body=${JSON.stringify(serverBody)}`
+        `[generate] name=${(error as Error).name} | message=${(error as Error).message} | status=${status} | body=${JSON.stringify(serverBody)}`
       )
 
-      const body = serverBody as { error?: string; message?: string } | null
-      const serverError = body?.error
+      const sb = serverBody as { error?: string } | null
+      const serverError = sb?.error
       if (status === 401 || serverError === 'unauthorized') return fail('unauthorized')
       if (status === 429 || serverError === 'rate_limit') return fail('rate_limit')
       if (status === 400 || serverError === 'invalid_input') return fail('invalid_input')
@@ -65,19 +73,37 @@ export async function generateQuiz(
       return fail('internal')
     }
 
-    // Validar que el shape sea correcto (defensa extra)
-    if (!isValidQuiz(data)) {
-      console.error('[generateQuiz] shape inesperado:', data)
-      return fail('ai_invalid_response')
-    }
-
-    return { ok: true, quiz: data }
+    return { ok: true, data }
   } catch (err) {
-    console.error('[generateQuiz] error de red:', err)
+    console.error('[generate] error de red:', err)
     return fail('network')
   }
 }
 
-function fail(error: GenerateQuizError): GenerateQuizFailure {
-  return { ok: false, error, message: ERROR_MESSAGES[error] }
+export async function generateQuiz(
+  subjectName: string,
+  topic?: string
+): Promise<GenerateQuizResult> {
+  const res = await invokeGenerate({ subjectName, topic: topic?.trim() || undefined, mode: 'quiz' })
+  if (!res.ok) return res
+
+  if (!isValidQuiz(res.data)) {
+    console.error('[generateQuiz] shape inesperado:', res.data)
+    return fail('ai_invalid_response')
+  }
+  return { ok: true, quiz: res.data }
+}
+
+export async function generateExercises(
+  subjectName: string,
+  topic?: string
+): Promise<GenerateExercisesResult> {
+  const res = await invokeGenerate({ subjectName, topic: topic?.trim() || undefined, mode: 'exercises' })
+  if (!res.ok) return res
+
+  if (!isValidExerciseSet(res.data)) {
+    console.error('[generateExercises] shape inesperado:', res.data)
+    return fail('ai_invalid_response')
+  }
+  return { ok: true, exerciseSet: res.data }
 }

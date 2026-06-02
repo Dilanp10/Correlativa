@@ -9,6 +9,7 @@ interface Props {
   onSubjectChange: (id: string) => void
   onTopicChange: (t: string) => void
   onGenerate: () => void
+  generateLabel?: string
 }
 
 export default function SubjectPicker({
@@ -19,6 +20,7 @@ export default function SubjectPicker({
   onSubjectChange,
   onTopicChange,
   onGenerate,
+  generateLabel = 'Generar quiz',
 }: Props) {
   const fieldClass =
     'w-full bg-bg-elevated border border-muted rounded-xl px-3 py-2.5 text-text-primary text-sm focus:outline-none focus:border-accent transition-colors'
@@ -66,7 +68,7 @@ export default function SubjectPicker({
         loading={isGenerating}
         className="w-full"
       >
-        Generar quiz
+        {generateLabel}
       </Button>
 
       {/* Disclaimer IA */}

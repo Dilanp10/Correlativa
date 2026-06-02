@@ -41,6 +41,38 @@ Reglas:
 - "explanation" nunca dice "la opción A/B/C" porque las opciones están en un array sin letras.
 - No incluyas markdown, código, ni comillas extra. Solo el JSON.`
 
+const EXERCISES_SYSTEM_PROMPT = `Sos un profesor universitario argentino que arma ejercicios cortos para que estudiantes practiquen RESOLVIENDO (no eligiendo).
+
+Tu salida es SIEMPRE un JSON válido con esta forma exacta:
+
+{
+  "exercises": [
+    {
+      "statement": "string (enunciado claro del ejercicio a resolver, en español argentino)",
+      "answerType": "number",
+      "expectedNumber": 42,
+      "tolerance": 0.01,
+      "solution": "string (paso a paso didáctico de cómo se resuelve)"
+    },
+    {
+      "statement": "string",
+      "answerType": "text",
+      "acceptedAnswers": ["respuesta", "otra forma válida de escribirla"],
+      "solution": "string (paso a paso didáctico)"
+    }
+  ]
+}
+
+Reglas:
+- EXACTAMENTE 5 ejercicios.
+- Cada ejercicio debe tener UNA respuesta concreta (un número o una palabra/frase corta), NO respuestas largas o abiertas.
+- Si la respuesta es un número: usá "answerType": "number" con "expectedNumber" (numérico, no string). Agregá "tolerance" si el resultado es decimal.
+- Si la respuesta es una palabra o frase corta: usá "answerType": "text" con "acceptedAnswers", incluyendo TODAS las formas válidas razonables (con y sin artículo, sinónimos, en minúscula).
+- Preferí ejercicios numéricos cuando la materia lo permita (cálculo, física, etc.).
+- "solution" SIEMPRE explica el procedimiento completo, paso a paso, como para que el estudiante entienda cómo llegar al resultado.
+- Español argentino, nivel universitario.
+- No incluyas markdown, código, ni comillas extra. Solo el JSON.`
+
 // ── Validación del shape de respuesta ────────────────────────────────────────
 
 function isValidQuestion(q: unknown): boolean {
@@ -76,9 +108,38 @@ function isValidQuiz(data: unknown): boolean {
   )
 }
 
+function isValidExercise(e: unknown): boolean {
+  if (!e || typeof e !== 'object') return false
+  const obj = e as Record<string, unknown>
+  if (typeof obj.statement !== 'string' || obj.statement.length === 0) return false
+  if (typeof obj.solution !== 'string' || obj.solution.length === 0) return false
+
+  if (obj.answerType === 'number') {
+    return typeof obj.expectedNumber === 'number' && Number.isFinite(obj.expectedNumber)
+  }
+  if (obj.answerType === 'text') {
+    return (
+      Array.isArray(obj.acceptedAnswers) &&
+      obj.acceptedAnswers.length > 0 &&
+      obj.acceptedAnswers.every((a: unknown) => typeof a === 'string' && a.length > 0)
+    )
+  }
+  return false
+}
+
+function isValidExerciseSet(data: unknown): boolean {
+  if (!data || typeof data !== 'object') return false
+  const obj = data as Record<string, unknown>
+  return (
+    Array.isArray(obj.exercises) &&
+    obj.exercises.length === 5 &&
+    obj.exercises.every(isValidExercise)
+  )
+}
+
 // ── Llamada al modelo ─────────────────────────────────────────────────────────
 
-async function callModel(userPrompt: string, token: string): Promise<unknown> {
+async function callModel(systemPrompt: string, userPrompt: string, token: string): Promise<unknown> {
   const response = await fetch(GITHUB_MODELS_URL, {
     method: 'POST',
     headers: {
@@ -88,12 +149,12 @@ async function callModel(userPrompt: string, token: string): Promise<unknown> {
     body: JSON.stringify({
       model: MODEL,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       response_format: { type: 'json_object' },
       temperature: 0.7,
-      max_tokens: 1500,
+      max_tokens: 1800,
     }),
   })
 
@@ -148,13 +209,15 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: 'invalid_input', message: 'Body inválido.' }), { status: 400, headers })
   }
 
-  const { subjectName, topic } = body
+  const { subjectName, topic, mode } = body
   if (typeof subjectName !== 'string' || subjectName.trim().length === 0) {
     return new Response(
       JSON.stringify({ error: 'invalid_input', message: 'subjectName es requerido.' }),
       { status: 400, headers }
     )
   }
+
+  const isExercises = mode === 'exercises'
 
   // ── 3. Obtener el token del modelo ───────────────────────────────────────────
   const token = Deno.env.get('GITHUB_MODELS_TOKEN')
@@ -166,11 +229,16 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  // ── 4. Construir prompt ──────────────────────────────────────────────────────
+  // ── 4. Construir prompt según el modo ────────────────────────────────────────
   const topicLine = typeof topic === 'string' && topic.trim()
     ? `Tema o foco: ${topic.trim()}\n`
     : ''
-  const userPrompt = `Materia: ${subjectName.trim()}\n${topicLine}Generá 5 preguntas para que el estudiante repase. Devolveme solo el JSON.`
+  const systemPrompt = isExercises ? EXERCISES_SYSTEM_PROMPT : SYSTEM_PROMPT
+  const action = isExercises
+    ? 'Generá 5 ejercicios para que el estudiante resuelva.'
+    : 'Generá 5 preguntas para que el estudiante repase.'
+  const userPrompt = `Materia: ${subjectName.trim()}\n${topicLine}${action} Devolveme solo el JSON.`
+  const validate = isExercises ? isValidExerciseSet : isValidQuiz
 
   // ── 5. Llamar al modelo con 1 reintento ──────────────────────────────────────
   let attempts = 0
@@ -178,9 +246,9 @@ Deno.serve(async (req: Request) => {
 
   while (attempts <= MAX_RETRIES) {
     try {
-      const data = await callModel(userPrompt, token)
+      const data = await callModel(systemPrompt, userPrompt, token)
 
-      if (!isValidQuiz(data)) {
+      if (!validate(data)) {
         throw new Error('invalid_shape')
       }
 
@@ -204,7 +272,7 @@ Deno.serve(async (req: Request) => {
   return new Response(
     JSON.stringify({
       error: 'ai_invalid_response',
-      message: 'El modelo devolvió un quiz mal formado. Probá con otro tema.',
+      message: 'El modelo devolvió contenido mal formado. Probá con otro tema.',
     }),
     { status: 502, headers }
   )
