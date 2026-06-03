@@ -1,3 +1,8 @@
+**Feature Branch**: `005-sesiones-estudio`
+**Created**: 2026-06-03
+**Status**: Implemented
+**Migrated from**: Study-PRD.md
+
 # Study-PRD.md — Correlativa
 ## Paso 1 (SDD) — Documento de Producto: Sesiones de Estudio con IA
 

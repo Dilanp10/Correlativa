@@ -123,7 +123,7 @@ Implementar `emitActivity` y `onActivity` per API-Contracts §6. Tipo `ActivityL
 
 ## 5. Qué NO tocar
 - Otras tablas o RLS.
-- Lógica existente de subjects/agenda/career/auth/gamification (solo se agrega `emitActivity()`, una línea).
+- Lógica existente de subjects/agenda/career/auth/gamificación (solo se agrega `emitActivity()`, una línea).
 - Las decisiones explícitamente fuera de scope (heatmap, notificaciones push, mejor racha histórica, indicador "en riesgo").
 
 ---

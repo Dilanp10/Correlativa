@@ -1,3 +1,8 @@
+**Feature Branch**: `006-agenda-validaciones`
+**Created**: 2026-06-03
+**Status**: Implemented
+**Migrated from**: Agenda-No-Events-On-Approved-Spec.md
+
 # Agenda — No crear eventos para materias aprobadas
 ## Mini-spec (refinamiento de la feature Agenda)
 

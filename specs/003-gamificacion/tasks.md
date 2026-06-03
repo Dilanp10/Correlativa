@@ -112,7 +112,7 @@ Sin contar tests, el código nuevo son ~6 archivos chicos (lib + hook + 3 compon
 ## 4. Qué NO tocar en esta iteración (mantengo el scope cerrado)
 - Tablas / RLS / SQL (Database-Spec lo confirmó).
 - Otras features (subjects, agenda, career, auth) — solo se **leen** stores, nada de mutaciones ni cambios.
-- Sistema de progreso académico actual (`computeCareerProgress`) — sigue igual, coexiste con gamificación.
+- Sistema de progreso académico actual (`computeCareerProgress`) sigue igual; gamificación es una capa aparte.
 - Logros, rachas, ranking, ledger, notificaciones — quedan para tandas siguientes.
 - Confeti en el overlay (decisión cerrada en UX-Spec).
 

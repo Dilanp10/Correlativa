@@ -1,3 +1,8 @@
+**Feature Branch**: `002-mvp-core`
+**Created**: 2026-06-03
+**Status**: Implemented
+**Migrated from**: PRD.md
+
 # PRD — Correlativa
 ## Product Requirements Document · v1.0
 

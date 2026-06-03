@@ -1,3 +1,8 @@
+**Feature Branch**: `003-gamificacion`
+**Created**: 2026-06-03
+**Status**: Implemented
+**Migrated from**: Gamification-PRD.md
+
 # Gamification-PRD.md — Correlativa
 ## Paso 1 (SDD) — Documento de Producto: Gamificación
 

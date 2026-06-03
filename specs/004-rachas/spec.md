@@ -1,3 +1,8 @@
+**Feature Branch**: `004-rachas`
+**Created**: 2026-06-03
+**Status**: Implemented
+**Migrated from**: Streaks-PRD.md
+
 # Streaks-PRD.md — Correlativa
 ## Paso 1 (SDD) — Documento de Producto: Rachas
 
@@ -39,7 +44,7 @@ Solo la **racha actual**: un chip con 🔥 y el número de días. Sin mejor hist
 - **Dado** el último día de actividad y el contador almacenado del usuario, **cuando** se evalúa la racha, **entonces** se devuelve el número correcto aplicando las reglas de §4.
 - Si la última acción fue **hoy** → la racha vale (no decrece).
 - Si fue **ayer** → la racha sigue intacta hasta el fin del día de hoy (si hoy no hace nada se pierde mañana).
-- Si fue **anteayer** y **no se usó el congelador este mes** → todavía está intacta hasta hoy (el congelador la salva si hoy hace una acción).
+- Si fue **anteayer** y **no se usó el congelador este mes** → todavía está intacta hasta hoy (el congelador la salvaría si hoy hace una acción).
 - Si fue hace más → la racha es **0** a efectos visuales.
 
 ### F2 — Incremento por acción
