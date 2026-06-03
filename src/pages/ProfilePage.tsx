@@ -8,6 +8,8 @@ import { useScheduleStore } from '@/features/agenda/store/scheduleStore'
 import { useStreakStore } from '@/features/streaks/store/streakStore'
 import { useSessionsStore } from '@/features/study/store/sessionsStore'
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
+import { useAchievements } from '@/features/achievements/hooks/useAchievements'
+import AchievementsGallery from '@/features/achievements/components/AchievementsGallery'
 import { signOut } from '@/shared/lib/supabase/auth'
 import { supabase } from '@/shared/lib/supabase/client'
 import BottomNav from '@/shared/components/BottomNav'
@@ -26,6 +28,7 @@ export default function ProfilePage() {
   const resetSessions = useSessionsStore(s => s.reset)
   const getProgress = useSubjectsStore(s => s.getProgress)
   useSubjects()
+  const { summary: achievementsSummary } = useAchievements()
 
   const [changingCareer, setChangingCareer] = useState(false)
 
@@ -103,6 +106,11 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Logros */}
+        <div className="bg-bg-surface rounded-2xl border border-muted/30 p-5">
+          <AchievementsGallery summary={achievementsSummary} />
         </div>
 
         {/* Acciones */}

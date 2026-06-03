@@ -13,6 +13,7 @@ import OnboardingPage from '@/pages/OnboardingPage'
 
 import LevelUpWatcher from '@/features/gamification/components/LevelUpWatcher'
 import StreakActivityConsumer from '@/features/streaks/components/StreakActivityConsumer'
+import AchievementWatcher from '@/features/achievements/components/AchievementWatcher'
 
 // Carga lazy — solo se descargan cuando el usuario navega a esa ruta.
 // TreePage incluye @xyflow/react (~250 kB), así no bloquea el primer load.
@@ -109,6 +110,8 @@ export default function App() {
       {/* Consumer del bus de actividad — actualiza la racha del usuario
           cuando subjects/agenda/futuras features emiten emitActivity(). */}
       <StreakActivityConsumer />
+      {/* Watcher global de logros — detecta desbloqueos y celebra. */}
+      <AchievementWatcher />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
