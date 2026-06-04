@@ -82,7 +82,7 @@ export default function AgendaPage() {
   const showEmptySchedule = schedule.loaded && schedule.slots.length === 0
 
   return (
-    <div className="min-h-screen bg-bg-base flex flex-col pb-24 max-w-md mx-auto w-full">
+    <div className="min-h-screen bg-bg-base flex flex-col pb-24 md:pb-6 md:ml-56">
       {/* Header */}
       <div className="px-5 pt-12 pb-4">
         <h1 className="text-2xl font-bold text-text-primary">Agenda</h1>

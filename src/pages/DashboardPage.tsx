@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const progress = getProgress()
 
   return (
-    <div className="min-h-screen bg-bg-base flex flex-col pb-20 max-w-md mx-auto w-full">
+    <div className="min-h-screen bg-bg-base flex flex-col pb-20 md:pb-6 md:ml-56">
       {/* Header */}
       <div className="px-5 pt-12 pb-6">
         <div className="flex items-start justify-between gap-3">
@@ -59,7 +59,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-5 space-y-6">
+      <div className="flex-1 px-5 md:px-8 space-y-6 md:max-w-4xl">
         {/* Banner para importar plan desde PDF (solo si no hay materias) */}
         <PdfImportBanner />
 

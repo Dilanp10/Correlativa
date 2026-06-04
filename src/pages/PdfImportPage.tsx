@@ -41,7 +41,7 @@ export default function PdfImportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-base flex flex-col max-w-md mx-auto w-full">
+    <div className="min-h-screen bg-bg-base flex flex-col md:ml-56">
       {/* Header */}
       <header className="px-5 pt-12 pb-4 flex items-start gap-3">
         <button

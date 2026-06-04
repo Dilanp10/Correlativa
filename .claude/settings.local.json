@@ -8,7 +8,26 @@
       "Bash(ping -n 3 127.0.0.1)",
       "Bash(npm run *)",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git config *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(npx vitest *)",
+      "Bash(Test-Path \"C:\\\\Users\\\\cabre\\\\OneDrive\\\\Escritorio\\\\danna\\\\src\\\\features\\\\study\\\\lib\\\\quiz.ts\")",
+      "WebFetch(domain:github.com)",
+      "Bash(gh repo *)",
+      "Bash(gh api *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "PowerShell(Write-Output \"=== Python ===\"; \\(Get-Command python -ErrorAction SilentlyContinue\\).Source; python --version 2>&1; Write-Output \"=== uv ===\"; \\(Get-Command uv -ErrorAction SilentlyContinue\\).Source; uv --version 2>&1; Write-Output \"=== pip ===\"; \\(Get-Command pip -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\cabre\\\\OneDrive\\\\Escritorio\\\\danna\"; $specify = \"C:\\\\Users\\\\cabre\\\\AppData\\\\Roaming\\\\Python\\\\Python312\\\\Scripts\\\\specify.exe\"; & $specify init --here --force --integration claude --ignore-agent-tools 2>&1 | Select-Object -Last 40)",
+      "Bash(adb devices *)",
+      "PowerShell(adb devices)",
+      "Bash(git commit -m 'docs: tasks de Logros y Medallas \\(/speckit-tasks\\) *)",
+      "Bash(powershell -Command \"\\(Get-Content 'specs/001-logros-medallas/tasks.md' -Raw -Encoding UTF8\\) -replace '- \\\\[ \\\\]', '- [x]' | Set-Content 'specs/001-logros-medallas/tasks.md' -Encoding UTF8\")",
+      "Bash(git rm *)",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }

@@ -22,7 +22,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 const GITHUB_MODELS_URL = 'https://models.inference.ai.azure.com/chat/completions'
 const MODEL = 'gpt-4o-mini'
 const MAX_PDF_BYTES = 5 * 1024 * 1024 // 5 MB
-const MAX_TEXT_CHARS = 50_000
+const MAX_TEXT_CHARS = 40_000 // Reservamos cuota de tokens para la salida JSON
+const MAX_OUTPUT_TOKENS = 8000 // Subido de 4000 para planes con muchas materias
 const MAX_RETRIES = 1
 
 const SYSTEM_PROMPT = `Sos un asistente que extrae materias de planes de estudios universitarios argentinos.
@@ -163,7 +164,7 @@ async function callModel(userText: string, token: string): Promise<unknown> {
       ],
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      max_tokens: 4000,
+      max_tokens: MAX_OUTPUT_TOKENS,
     }),
   })
 
@@ -176,8 +177,27 @@ async function callModel(userText: string, token: string): Promise<unknown> {
 
   const json = await response.json()
   const content = json?.choices?.[0]?.message?.content
+  const finishReason = json?.choices?.[0]?.finish_reason
   if (!content) throw new Error('empty_response')
-  return JSON.parse(content)
+
+  // Log de diagnóstico cuando el JSON se trunca por tokens (causa más común
+  // del 502). Vemos el inicio para diagnosticar y la longitud total.
+  if (finishReason === 'length') {
+    console.warn(
+      `[parse-study-plan] respuesta truncada por max_tokens (len=${content.length}). ` +
+        `Inicio: ${content.slice(0, 200)}`
+    )
+  }
+
+  try {
+    return JSON.parse(content)
+  } catch (err) {
+    console.error(
+      `[parse-study-plan] JSON.parse falló (finish_reason=${finishReason}, len=${content.length}). ` +
+        `Primeros 500 chars: ${content.slice(0, 500)}`
+    )
+    throw new Error('invalid_json')
+  }
 }
 
 // ── Acción `parse` ──────────────────────────────────────────────────────────────
@@ -256,10 +276,17 @@ async function handleParse(req: Request): Promise<Response> {
     try {
       const raw = await callModel(extractedText, token)
       parsed = validateAndNormalize(raw)
-      if (!parsed) throw new Error('invalid_shape')
+      if (!parsed) {
+        console.error(
+          `[parse-study-plan] validateAndNormalize devolvió null. ` +
+            `raw=${JSON.stringify(raw).slice(0, 400)}`
+        )
+        throw new Error('invalid_shape')
+      }
       break
     } catch (err) {
       lastError = err as Error
+      console.warn(`[parse-study-plan] intento ${attempts + 1}/${MAX_RETRIES + 1} falló: ${lastError.message}`)
       if (lastError.message === 'rate_limit') break
       attempts++
     }

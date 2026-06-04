@@ -85,7 +85,7 @@ export default function StudyPage() {
   const generatingLabel = mode === 'exercises' ? 'Armando tus ejercicios...' : 'Armando tu quiz...'
 
   return (
-    <div className="min-h-screen bg-bg-base flex flex-col pb-24 max-w-md mx-auto w-full">
+    <div className="min-h-screen bg-bg-base flex flex-col pb-24 md:pb-6 md:ml-56">
       {/* Header */}
       <div className="px-5 pt-12 pb-6">
         <h1 className="text-2xl font-bold text-text-primary">Estudiar</h1>
