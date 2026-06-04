@@ -19,4 +19,5 @@ export const ROUTES = {
   AGENDA: '/agenda',
   STUDY: '/estudiar',
   PROFILE: '/profile',
+  PDF_IMPORT: '/importar-plan',
 } as const

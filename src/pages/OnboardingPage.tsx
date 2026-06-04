@@ -11,7 +11,7 @@ import Input from '@/shared/components/Input'
 import type { University, CareerWithUniversity } from '@/shared/types'
 import { ROUTES } from '@/shared/constants'
 
-type Step = 'university' | 'career' | 'custom'
+type Step = 'university' | 'career' | 'custom' | 'pdf_offer'
 
 export default function OnboardingPage() {
   const user = useAuthStore(s => s.user)
@@ -46,7 +46,8 @@ export default function OnboardingPage() {
     await supabase.from('users').update({ active_career_id: career.id }).eq('id', user.id)
     setActiveCareer(career)
     setCareerLoading(false)
-    navigate(ROUTES.TREE)
+    setIsSaving(false)
+    setStep('pdf_offer')
   }
 
   async function handleCreateCustom() {
@@ -57,14 +58,17 @@ export default function OnboardingPage() {
       await supabase.from('users').update({ active_career_id: career.id }).eq('id', user.id)
       setActiveCareer(career)
       setCareerLoading(false)
-      navigate(ROUTES.TREE)
+      setIsSaving(false)
+      setStep('pdf_offer')
+      return
     }
     setIsSaving(false)
   }
 
   // ── Step indicator ──────────────────────────────────────────
-  const stepNumber = step === 'university' ? 1 : 2
-  const stepTotal = 2
+  // 3 steps visibles: universidad, carrera, plan opcional.
+  const stepNumber = step === 'university' ? 1 : step === 'pdf_offer' ? 3 : 2
+  const stepTotal = 3
 
   return (
     <div className="min-h-screen bg-bg-base flex flex-col items-center justify-center p-4">
@@ -76,7 +80,7 @@ export default function OnboardingPage() {
             Paso {stepNumber} de {stepTotal}
           </p>
           <div className="flex gap-2 mb-6">
-            {[1, 2].map(n => (
+            {[1, 2, 3].map(n => (
               <div
                 key={n}
                 className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
@@ -115,6 +119,15 @@ export default function OnboardingPage() {
               <h2 className="text-2xl font-bold text-text-primary">Creá tu carrera</h2>
               <p className="text-text-secondary text-sm mt-1">
                 Podés agregar las materias después desde el árbol.
+              </p>
+            </>
+          )}
+
+          {step === 'pdf_offer' && (
+            <>
+              <h2 className="text-2xl font-bold text-text-primary">¿Subís tu plan de estudios?</h2>
+              <p className="text-text-secondary text-sm mt-1">
+                Si tenés el PDF a mano, cargamos todas tus materias en un toque.
               </p>
             </>
           )}
@@ -236,8 +249,38 @@ export default function OnboardingPage() {
               disabled={!customName.trim()}
               className="w-full mt-2"
             >
-              Crear carrera e ir al árbol
+              Crear carrera y continuar
             </Button>
+          </div>
+        )}
+
+        {/* ── STEP 3 (opcional): Subir el plan de estudios ───────── */}
+        {step === 'pdf_offer' && (
+          <div className="flex flex-col gap-4">
+            <div className="bg-bg-surface border border-muted/40 rounded-2xl px-4 py-4 text-sm text-text-secondary space-y-2">
+              <p className="text-text-primary font-semibold">¿Cómo funciona?</p>
+              <p>
+                Leemos el texto del PDF y usamos IA para detectar todas tus
+                materias con su año, cuatrimestre y correlativas.
+              </p>
+              <p className="text-text-secondary/80">
+                Vas a poder revisar todo antes de confirmar. Te ahorra unos
+                20 minutos de carga manual.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => navigate(`${ROUTES.PDF_IMPORT}?from=onboarding`)}
+              className="w-full"
+            >
+              Subir PDF ahora
+            </Button>
+            <button
+              onClick={() => navigate(ROUTES.DASHBOARD)}
+              className="w-full text-text-secondary text-sm py-2 hover:text-text-primary transition-colors"
+            >
+              Lo hago después
+            </button>
           </div>
         )}
       </div>

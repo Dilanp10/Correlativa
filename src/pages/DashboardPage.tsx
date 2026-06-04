@@ -8,6 +8,7 @@ import { useGamification } from '@/features/gamification/hooks/useGamification'
 import LevelCard from '@/features/gamification/components/LevelCard'
 import { useStreak } from '@/features/streaks/hooks/useStreak'
 import StreakChip from '@/features/streaks/components/StreakChip'
+import PdfImportBanner from '@/features/pdf-import/components/PdfImportBanner'
 import BottomNav from '@/shared/components/BottomNav'
 import { ROUTES } from '@/shared/constants'
 
@@ -59,6 +60,9 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex-1 px-5 space-y-6">
+        {/* Banner para importar plan desde PDF (solo si no hay materias) */}
+        <PdfImportBanner />
+
         {/* Nivel (gamificación) */}
         <LevelCard state={gamificationState} />
 

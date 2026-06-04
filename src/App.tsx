@@ -17,11 +17,12 @@ import AchievementWatcher from '@/features/achievements/components/AchievementWa
 
 // Carga lazy — solo se descargan cuando el usuario navega a esa ruta.
 // TreePage incluye @xyflow/react (~250 kB), así no bloquea el primer load.
-const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
-const TreePage      = lazy(() => import('@/pages/TreePage'))
-const AgendaPage    = lazy(() => import('@/pages/AgendaPage'))
-const StudyPage     = lazy(() => import('@/pages/StudyPage'))
-const ProfilePage   = lazy(() => import('@/pages/ProfilePage'))
+const DashboardPage  = lazy(() => import('@/pages/DashboardPage'))
+const TreePage       = lazy(() => import('@/pages/TreePage'))
+const AgendaPage     = lazy(() => import('@/pages/AgendaPage'))
+const StudyPage      = lazy(() => import('@/pages/StudyPage'))
+const ProfilePage    = lazy(() => import('@/pages/ProfilePage'))
+const PdfImportPage  = lazy(() => import('@/pages/PdfImportPage'))
 
 async function loadUserCareer(userId: string) {
   const setActiveCareer = useCareerStore.getState().setActiveCareer
@@ -172,6 +173,16 @@ export default function App() {
               <ProtectedRoute>
                 <CareerRequiredRoute>
                   <ProfilePage />
+                </CareerRequiredRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/importar-plan"
+            element={
+              <ProtectedRoute>
+                <CareerRequiredRoute>
+                  <PdfImportPage />
                 </CareerRequiredRoute>
               </ProtectedRoute>
             }
