@@ -22,7 +22,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 const GITHUB_MODELS_URL = 'https://models.inference.ai.azure.com/chat/completions'
 const MODEL = 'gpt-4o-mini'
 const MAX_PDF_BYTES = 5 * 1024 * 1024 // 5 MB
-const MAX_TEXT_CHARS = 40_000 // Reservamos cuota de tokens para la salida JSON
+const MAX_TEXT_CHARS = 20_000 // GitHub Models rechaza requests muy grandes (413)
 const MAX_OUTPUT_TOKENS = 8000 // Subido de 4000 para planes con muchas materias
 const MAX_RETRIES = 1
 
@@ -47,8 +47,9 @@ Salida: SIEMPRE un JSON válido con esta forma exacta:
 Reglas:
 - Detectá TODAS las materias del plan. No inventes ninguna.
 - "name" SIEMPRE presente (string no vacío).
-- "year": entero (1, 2, 3...). Si no se puede determinar, usá null.
-- "semester": 1 o 2 (cuatrimestre). Para materias anuales podés usar 1. Si no se puede determinar, usá null.
+- "year": entero del 1 al 6. CRÍTICO: leé encabezados como "Primer Año", "Segundo Año", "Año 1", "1° Año", "Tercer Año", "Cuarto Año", "Quinto Año", "1er", "2do", "3ro", "4to", "5to", números romanos (I, II, III, IV, V), o secciones tipo "Ciclo Básico / Ciclo Superior" con su año correspondiente. NO pongas todas las materias en año 1 ni en año 2 por defecto — la mayoría de los planes tienen materias distribuidas en 4 o 5 años. Si una materia está claramente bajo el encabezado de "Tercer Año", su year es 3. Solo usá null si no hay ningún indicador de año cerca de la materia.
+- "semester": 1 o 2 (cuatrimestre). CRÍTICO: dentro de cada año el plan suele tener DOS sub-bloques, uno por cuatrimestre. Buscá encabezados como "Primer Cuatrimestre", "Segundo Cuatrimestre", "1er Cuatrimestre", "2do Cuatrimestre", "1° Cuat.", "2° Cuat.", "C1", "C2". El OCR puede ensuciarlos: "ler. CUATRIMESTRE" o "1ro" = cuatrimestre 1; "2do. CUATRIMESTRE", "2to. CUATRIMESTRE", "2da" = cuatrimestre 2. Asigná a cada materia el cuatrimestre del sub-bloque bajo el que aparece. NO pongas todas las materias en cuatrimestre 1: cada año tiene materias en el 1° Y en el 2°. Recorré el texto en orden y cambiá de cuatrimestre cuando aparece el encabezado del segundo. Para materias anuales usá 1. Solo usá null si realmente no hay ningún encabezado de cuatrimestre.
+- IMPORTANTE: revisá el texto completo en busca de encabezados de año antes de asignar. No agrupes todas las materias bajo el primer año/cuatrimestre que veas. Cada bloque de materias suele tener su propio encabezado.
 - "correlativeNames": array de nombres EXACTOS de otras materias del mismo plan que son correlativas (pueden estar vacíos []). Solo nombres que aparecen como otras materias en el plan.
 - "partial": true si parte del texto era ilegible o el plan parece incompleto; false si extrajiste todo bien.
 - "warning": string corto en español si "partial" es true, explicando qué pasó; null en otro caso.
@@ -252,6 +253,18 @@ async function handleParse(req: Request): Promise<Response> {
       'El PDF no contiene texto suficiente. Puede ser una imagen escaneada.',
       422
     )
+  }
+
+  // Priorizar la sección que tiene la distribución por año/cuatrimestre.
+  // Muchos PDFs (ordenanzas, planes con anexos institucionales) tienen 20+
+  // páginas de intro antes de la tabla real. Si encontramos las palabras clave
+  // que marcan el inicio de la distribución, slice desde ahí.
+  const yearHeaderRegex =
+    /(DISTRIBUCI[OÓ]N\s+POR\s+CICLOS?|DISTRIBUCI[OÓ]N\s+POR\s+A[ÑN]OS?|PLAN\s+DE\s+ESTUDIOS?|PRIMER\s+A[ÑN]O|1[°º]?\s*A[ÑN]O|A[ÑN]O\s*1\b)/i
+  const headerMatch = extractedText.match(yearHeaderRegex)
+  if (headerMatch && headerMatch.index !== undefined && headerMatch.index > 1000) {
+    // Empezamos un poco antes del header por si hay contexto útil cercano
+    extractedText = extractedText.slice(Math.max(0, headerMatch.index - 500))
   }
 
   // Truncar si excede el límite

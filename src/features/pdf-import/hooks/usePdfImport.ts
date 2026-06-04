@@ -19,6 +19,9 @@ interface PdfImportState {
   parse(file: File): Promise<void>
   save(): Promise<void>
   reset(): void
+  updateSubject(index: number, patch: Partial<SubjectDraft>): void
+  removeSubject(index: number): void
+  addSubject(year: number | null): void
 }
 
 const INITIAL = {
@@ -94,6 +97,36 @@ const usePdfImportStore = create<PdfImportState>((set, get) => ({
 
   reset() {
     set({ ...INITIAL })
+  },
+
+  updateSubject(index, patch) {
+    const { subjects } = get()
+    if (index < 0 || index >= subjects.length) return
+    const next = subjects.slice()
+    next[index] = { ...next[index], ...patch }
+    set({ subjects: next })
+  },
+
+  removeSubject(index) {
+    const { subjects } = get()
+    if (index < 0 || index >= subjects.length) return
+    set({ subjects: subjects.filter((_, i) => i !== index) })
+  },
+
+  addSubject(year) {
+    const { subjects } = get()
+    set({
+      subjects: [
+        ...subjects,
+        {
+          name: '',
+          year,
+          semester: 1,
+          correlativeNames: [],
+          confidence: 'low',
+        },
+      ],
+    })
   },
 }))
 

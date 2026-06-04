@@ -6,13 +6,18 @@ import '@xyflow/react/dist/style.css'
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
 import { useAgenda } from '@/features/agenda/hooks/useAgenda'
 import { SubjectNode } from '@/features/tree/components/SubjectNode'
+import { YearPanelNode, CuatLabelNode } from '@/features/tree/components/YearColumnNodes'
 import { useTreeLayout } from '@/features/tree/hooks/useTreeLayout'
 import SubjectDetailSheet from '@/features/subjects/components/SubjectDetailSheet'
 import SubjectAgendaEvents from '@/features/agenda/components/SubjectAgendaEvents'
 import BottomNav from '@/shared/components/BottomNav'
 
 // Definido fuera del componente: React Flow necesita una referencia estable
-const nodeTypes = { subject: SubjectNode }
+const nodeTypes = {
+  subject: SubjectNode,
+  yearPanel: YearPanelNode,
+  cuatLabel: CuatLabelNode,
+}
 
 export default function TreePage() {
   const { isLoading, loaded } = useSubjects()
@@ -24,6 +29,8 @@ export default function TreePage() {
   // onNodeClick es el handler nativo de React Flow — siempre se dispara
   // aunque elementsSelectable=false, a diferencia del onClick en el nodo interno
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
+    // Solo las materias abren el detalle; los paneles/etiquetas son decorativos.
+    if (node.type !== 'subject') return
     setSelectedSubjectId(node.id)
   }
 

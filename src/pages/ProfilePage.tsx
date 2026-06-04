@@ -124,6 +124,13 @@ export default function ProfilePage() {
             <span className="text-text-secondary">→</span>
           </button>
           <button
+            onClick={() => navigate('/importar-plan')}
+            className="w-full px-5 py-4 text-left text-sm font-medium text-text-primary hover:bg-bg-elevated transition-colors flex items-center justify-between"
+          >
+            <span>Importar plan de estudios (PDF)</span>
+            <span className="text-text-secondary">→</span>
+          </button>
+          <button
             onClick={handleSignOut}
             className="w-full px-5 py-4 text-left text-sm font-medium text-red-400 hover:bg-red-500/5 transition-colors flex items-center justify-between"
           >
