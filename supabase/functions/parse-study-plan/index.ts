@@ -47,14 +47,53 @@ Salida: SIEMPRE un JSON válido con esta forma exacta:
 Reglas:
 - Detectá TODAS las materias del plan. No inventes ninguna.
 - "name" SIEMPRE presente (string no vacío).
-- "year": entero del 1 al 6. CRÍTICO: leé encabezados como "Primer Año", "Segundo Año", "Año 1", "1° Año", "Tercer Año", "Cuarto Año", "Quinto Año", "1er", "2do", "3ro", "4to", "5to", números romanos (I, II, III, IV, V), o secciones tipo "Ciclo Básico / Ciclo Superior" con su año correspondiente. NO pongas todas las materias en año 1 ni en año 2 por defecto — la mayoría de los planes tienen materias distribuidas en 4 o 5 años. Si una materia está claramente bajo el encabezado de "Tercer Año", su year es 3. Solo usá null si no hay ningún indicador de año cerca de la materia.
-- "semester": 1 o 2 (cuatrimestre). CRÍTICO: dentro de cada año el plan suele tener DOS sub-bloques, uno por cuatrimestre. Buscá encabezados como "Primer Cuatrimestre", "Segundo Cuatrimestre", "1er Cuatrimestre", "2do Cuatrimestre", "1° Cuat.", "2° Cuat.", "C1", "C2". El OCR puede ensuciarlos: "ler. CUATRIMESTRE" o "1ro" = cuatrimestre 1; "2do. CUATRIMESTRE", "2to. CUATRIMESTRE", "2da" = cuatrimestre 2. Asigná a cada materia el cuatrimestre del sub-bloque bajo el que aparece. NO pongas todas las materias en cuatrimestre 1: cada año tiene materias en el 1° Y en el 2°. Recorré el texto en orden y cambiá de cuatrimestre cuando aparece el encabezado del segundo. Para materias anuales usá 1. Solo usá null si realmente no hay ningún encabezado de cuatrimestre.
-- IMPORTANTE: revisá el texto completo en busca de encabezados de año antes de asignar. No agrupes todas las materias bajo el primer año/cuatrimestre que veas. Cada bloque de materias suele tener su propio encabezado.
+- MARCADORES (MUY IMPORTANTE): el texto fue pre-procesado e incluye marcadores con esta forma exacta: "##ANIO=N##" (indica el año, N de 1 a 6) y "##CUAT=N##" (indica el cuatrimestre, N = 1 o 2). Estos marcadores aparecen ANTES del bloque de materias al que corresponden.
+- "year": usá SIEMPRE el valor del último "##ANIO=N##" que aparece ANTES de la materia en el texto. Por ejemplo, todas las materias que están después de "##ANIO=3##" y antes de "##ANIO=4##" tienen year=3. NO adivines ni uses otra fuente: el marcador manda. Solo usá null si una materia no tiene ningún "##ANIO##" antes.
+- "semester": usá SIEMPRE el valor del último "##CUAT=N##" que aparece ANTES de la materia. Las materias después de "##CUAT=2##" (y antes del próximo marcador) tienen semester=2. NO pongas todo en 1. Solo usá null si no hay ningún "##CUAT##" antes de la materia dentro de su año.
+- Recorré el texto en orden, manteniendo el año y cuatrimestre "actuales" según el último marcador visto, y asigná esos valores a cada materia que encuentres.
+- Ignorá los marcadores como texto: no los incluyas en "name".
 - "correlativeNames": array de nombres EXACTOS de otras materias del mismo plan que son correlativas (pueden estar vacíos []). Solo nombres que aparecen como otras materias en el plan.
 - "partial": true si parte del texto era ilegible o el plan parece incompleto; false si extrajiste todo bien.
 - "warning": string corto en español si "partial" es true, explicando qué pasó; null en otro caso.
 - No incluyas materias optativas/electivas sin nombre concreto.
 - No incluyas comentarios, markdown, ni texto fuera del JSON. Solo el JSON.`
+
+// ── Anotación de estructura (año / cuatrimestre) ─────────────────────────────────
+
+// Convierte los encabezados de año y cuatrimestre del plan en marcadores
+// inequívocos (##ANIO=N## / ##CUAT=N##) para que el modelo no los ignore.
+// Tolerante al OCR sucio ("ler" = 1er, "2to" = 2do).
+function annotateStructure(input: string): string {
+  let s = input
+  const yearMap: Record<string, number> = {
+    primer: 1,
+    segundo: 2,
+    tercer: 3,
+    cuarto: 4,
+    quinto: 5,
+    sexto: 6,
+  }
+
+  // "PRIMER AÑO", "SEGUNDO AÑO", ... "SEXTO AÑO"
+  s = s.replace(
+    /\b(PRIMER|SEGUNDO|TERCER|CUARTO|QUINTO|SEXTO)\s+A[ÑN]O\b/gi,
+    (_m, w: string) => ` \n##ANIO=${yearMap[w.toLowerCase()]}## `
+  )
+  // "AÑO 1" ... "AÑO 6"
+  s = s.replace(/\bA[ÑN]O\s+([1-6])\b/gi, (_m, n: string) => ` \n##ANIO=${n}## `)
+
+  // Encabezados de cuatrimestre (incluye OCR: "ler.", "2to.")
+  s = s.replace(
+    /\b(PRIMER|SEGUNDO|1\s*er|ler|1ro|1[°º]|2\s*do|2to|2da|2[°º])\.?\s*CUATR\w*/gi,
+    (_m, w: string) => {
+      const lw = w.toLowerCase().replace(/\s/g, '')
+      const sem = /^(segundo|2)/.test(lw) || lw.includes('2') ? 2 : 1
+      return ` \n##CUAT=${sem}## `
+    }
+  )
+
+  return s
+}
 
 // ── CORS ────────────────────────────────────────────────────────────────────────
 
@@ -257,14 +296,43 @@ async function handleParse(req: Request): Promise<Response> {
 
   // Priorizar la sección que tiene la distribución por año/cuatrimestre.
   // Muchos PDFs (ordenanzas, planes con anexos institucionales) tienen 20+
-  // páginas de intro antes de la tabla real. Si encontramos las palabras clave
-  // que marcan el inicio de la distribución, slice desde ahí.
-  const yearHeaderRegex =
-    /(DISTRIBUCI[OÓ]N\s+POR\s+CICLOS?|DISTRIBUCI[OÓ]N\s+POR\s+A[ÑN]OS?|PLAN\s+DE\s+ESTUDIOS?|PRIMER\s+A[ÑN]O|1[°º]?\s*A[ÑN]O|A[ÑN]O\s*1\b)/i
-  const headerMatch = extractedText.match(yearHeaderRegex)
-  if (headerMatch && headerMatch.index !== undefined && headerMatch.index > 1000) {
-    // Empezamos un poco antes del header por si hay contexto útil cercano
-    extractedText = extractedText.slice(Math.max(0, headerMatch.index - 500))
+  // páginas de intro antes de la tabla real. Buscamos un ancla FUERTE: el
+  // encabezado "PRIMER AÑO" seguido de cerca por "CUATRIMESTRE" (eso solo
+  // aparece en la tabla real, no en la intro ni en el índice).
+  let startIdx = -1
+  const strongAnchor = extractedText.match(/PRIMER\s+A[ÑN]O[\s\S]{0,400}?CUATR/i)
+  if (strongAnchor && strongAnchor.index !== undefined) {
+    startIdx = strongAnchor.index
+  } else {
+    const distAnchor = extractedText.match(
+      /DISTRIBUCI[OÓ]N[\s\S]{0,80}?(CICLO|CORRELATIV|A[ÑN]O)/i
+    )
+    if (distAnchor && distAnchor.index !== undefined) startIdx = distAnchor.index
+  }
+  if (startIdx > 1000) {
+    extractedText = extractedText.slice(Math.max(0, startIdx - 200))
+  }
+
+  // Anotar marcadores explícitos de año y cuatrimestre. El texto de los planes
+  // tiene encabezados claros ("PRIMER AÑO", "2do. Cuatrimestre", etc.) que el
+  // modelo a veces ignora. Los convertimos en tokens inequívocos que el prompt
+  // le instruye usar de forma literal.
+  extractedText = annotateStructure(extractedText)
+
+  // Cortar antes de la sección de "objetivos y contenidos mínimos" / electivas,
+  // que repite los nombres de materias y mete ruido. Solo cortamos si el corte
+  // queda DESPUÉS del primer marcador (es decir, ya empezó la tabla).
+  const firstMarker = extractedText.search(/##(ANIO|CUAT)=/)
+  const tailMatch = extractedText.match(
+    /(OBJETIVOS\s+Y\s+CONTENI|CONTENIDOS\s+M[IÍ]NIMOS|ASIGNATURAS\s+ELECTIVAS)/i
+  )
+  if (
+    tailMatch &&
+    tailMatch.index !== undefined &&
+    firstMarker >= 0 &&
+    tailMatch.index > firstMarker
+  ) {
+    extractedText = extractedText.slice(0, tailMatch.index)
   }
 
   // Truncar si excede el límite
