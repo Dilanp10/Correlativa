@@ -1,9 +1,13 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import BottomSheet from '@/shared/components/BottomSheet'
 import SummaryView from '@/features/study-ai/components/SummaryView'
 import FlashcardsView from '@/features/study-ai/components/FlashcardsView'
+import { useStudyStore } from '@/features/study/store/studyStore'
+import { ROUTES } from '@/shared/constants'
 
-type Mode = 'menu' | 'quiz' | 'summary' | 'flashcards'
+type Mode = 'menu' | 'summary' | 'flashcards'
+type CardId = 'quiz' | 'summary' | 'flashcards'
 
 interface Props {
   subjectId: string | null
@@ -12,36 +16,36 @@ interface Props {
   onClose: () => void
 }
 
-const MODES: { id: Exclude<Mode, 'menu'>; emoji: string; label: string; desc: string }[] = [
+const CARDS: { id: CardId; emoji: string; label: string; desc: string }[] = [
   { id: 'quiz', emoji: '📝', label: 'Quiz', desc: 'Preguntas para repasar' },
   { id: 'summary', emoji: '📄', label: 'Resumen', desc: 'Resumen del tema' },
   { id: 'flashcards', emoji: '🃏', label: 'Flashcards', desc: 'Tarjetas de repaso' },
 ]
 
-// Placeholder temporal: las sub-vistas reales llegan en las fases 5-7.
-function ComingSoon({ label, onBack }: { label: string; onBack: () => void }) {
-  return (
-    <div className="px-5 py-8 flex flex-col items-center text-center gap-3">
-      <p className="text-4xl">🚧</p>
-      <p className="text-text-primary font-semibold">{label}</p>
-      <p className="text-text-secondary text-sm">Lo estamos terminando. Muy pronto.</p>
-      <button
-        onClick={onBack}
-        className="mt-2 text-sm text-accent hover:text-accent/80 transition-colors"
-      >
-        ← Volver
-      </button>
-    </div>
-  )
-}
-
 export default function StudyAISheet({ subjectId, subjectName, isOpen, onClose }: Props) {
+  const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('menu')
 
-  // Al cerrar, reseteamos al menú para la próxima apertura.
   function handleClose() {
     setMode('menu')
     onClose()
+  }
+
+  // El quiz reutiliza la página de Estudiar (scoring, rachas, sesiones).
+  // Pre-seleccionamos la materia y navegamos.
+  function openQuiz() {
+    if (!subjectId) return
+    const study = useStudyStore.getState()
+    study.resetAll()
+    study.setMode('quiz')
+    study.setSubjectId(subjectId)
+    handleClose()
+    navigate(ROUTES.STUDY)
+  }
+
+  function handleCard(id: CardId) {
+    if (id === 'quiz') openQuiz()
+    else setMode(id)
   }
 
   return (
@@ -54,10 +58,10 @@ export default function StudyAISheet({ subjectId, subjectName, isOpen, onClose }
           </p>
 
           <div className="grid grid-cols-3 gap-3">
-            {MODES.map(m => (
+            {CARDS.map(m => (
               <button
                 key={m.id}
-                onClick={() => setMode(m.id)}
+                onClick={() => handleCard(m.id)}
                 className="flex flex-col items-center gap-1.5 rounded-2xl bg-bg-elevated border border-muted/40 px-2 py-4 hover:border-accent/50 active:scale-95 transition-all"
               >
                 <span className="text-2xl">{m.emoji}</span>
@@ -71,7 +75,6 @@ export default function StudyAISheet({ subjectId, subjectName, isOpen, onClose }
         </div>
       )}
 
-      {mode === 'quiz' && <ComingSoon label="Quiz" onBack={() => setMode('menu')} />}
       {mode === 'summary' && subjectId && (
         <SummaryView
           subjectId={subjectId}
@@ -79,6 +82,7 @@ export default function StudyAISheet({ subjectId, subjectName, isOpen, onClose }
           onBack={() => setMode('menu')}
         />
       )}
+
       {mode === 'flashcards' && subjectId && (
         <FlashcardsView
           subjectId={subjectId}
