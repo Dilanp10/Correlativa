@@ -6,6 +6,7 @@ import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
 import { useUserSubjects } from '@/features/subjects/hooks/useUserSubjects'
 import { useCareerStore } from '@/features/career/store/careerStore'
 import { useCorrelatives } from '@/features/correlatives/hooks/useCorrelatives'
+import StudyAISheet from '@/features/study-ai/components/StudyAISheet'
 import type { CorrelativeType } from '@/shared/types'
 import type { SubjectStatus, SubjectWithCorrelatives } from '@/shared/types'
 import {
@@ -45,6 +46,7 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
   const [gradeInput, setGradeInput] = useState('')
   const [pendingStatus, setPendingStatus] = useState<SubjectStatus | null>(null)
   const [editingCorrelatives, setEditingCorrelatives] = useState(false)
+  const [studyAIOpen, setStudyAIOpen] = useState(false)
 
   const subject = subjects.find(s => s.id === subjectId) ?? null
   const lastSubjectRef = useRef<SubjectWithCorrelatives | null>(null)
@@ -118,6 +120,7 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
   }
 
   return (
+    <>
     <BottomSheet isOpen={subjectId !== null} onClose={onClose}>
       {displaySubject && (
         <div className="px-5 py-4 space-y-5 pb-8">
@@ -160,6 +163,23 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
               </p>
             </div>
           )}
+
+          {/* Estudiar con IA */}
+          <button
+            onClick={() => setStudyAIOpen(true)}
+            className="w-full flex items-center gap-3 rounded-2xl bg-accent/10 border border-accent/25 px-4 py-3 hover:bg-accent/15 active:scale-[0.99] transition-all text-left"
+          >
+            <span className="text-xl">🤖</span>
+            <span className="flex-1">
+              <span className="block text-sm font-semibold text-text-primary">
+                Estudiar con IA
+              </span>
+              <span className="block text-xs text-text-secondary">
+                Quiz, resumen y flashcards
+              </span>
+            </span>
+            <span className="text-accent">›</span>
+          </button>
 
           {/* Selector de estado */}
           {canChangeStatus && (
@@ -339,5 +359,13 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
         </div>
       )}
     </BottomSheet>
+
+    <StudyAISheet
+      subjectId={subjectId}
+      subjectName={displaySubject?.name ?? ''}
+      isOpen={studyAIOpen}
+      onClose={() => setStudyAIOpen(false)}
+    />
+    </>
   )
 }
