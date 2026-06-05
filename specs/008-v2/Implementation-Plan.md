@@ -169,7 +169,16 @@
 
 ### Fase 7 — Quiz (1 sesión)
 
-**Objetivo:** flujo de quiz funcionando (sin persistencia).
+**DECISIÓN (durante implementación):** la app ya tenía un sistema de quiz
+completo en la feature `study/` (página `/estudiar`) con scoring, rachas,
+sesiones y achievements. En vez de duplicarlo dentro del sheet, el card "Quiz"
+del StudyAISheet pre-selecciona la materia y navega a `/estudiar`. Esto reusa
+toda la infraestructura existente (DRY) en vez de construir un quiz paralelo.
+Nota: ese quiz SÍ persiste sesiones (para rachas), a diferencia del plan
+original que decía "quiz sin persistencia" — se priorizó no romper lo existente.
+
+**Objetivo:** el card Quiz lleva al sistema de estudio existente con la materia
+cargada.
 
 - [ ] `src/features/study-ai/api/generateQuiz.ts` (llama la edge function ya existente)
 - [ ] `useQuiz.ts` (estado en memoria)

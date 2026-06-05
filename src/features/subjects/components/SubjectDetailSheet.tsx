@@ -4,8 +4,16 @@ import BottomSheet from '@/shared/components/BottomSheet'
 import Badge from '@/shared/components/Badge'
 import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
 import { useUserSubjects } from '@/features/subjects/hooks/useUserSubjects'
+import { useCareerStore } from '@/features/career/store/careerStore'
+import { useCorrelatives } from '@/features/correlatives/hooks/useCorrelatives'
+import StudyAISheet from '@/features/study-ai/components/StudyAISheet'
+import type { CorrelativeType } from '@/shared/types'
 import type { SubjectStatus, SubjectWithCorrelatives } from '@/shared/types'
-import { STATUS_LABELS } from '@/shared/constants'
+import {
+  STATUS_LABELS,
+  UNBLOCKING_STATUSES,
+  CURSAR_UNBLOCKING_STATUSES,
+} from '@/shared/constants'
 
 const ALL_STATUSES: SubjectStatus[] = [
   'no_cursada',
@@ -32,9 +40,13 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
   const treeStates = useSubjectsStore(s => s.treeStates)
   const getUserSubject = useSubjectsStore(s => s.getUserSubject)
   const { updateStatus } = useUserSubjects()
+  const activeCareer = useCareerStore(s => s.activeCareer)
+  const { updateType, savingKey } = useCorrelatives()
 
   const [gradeInput, setGradeInput] = useState('')
   const [pendingStatus, setPendingStatus] = useState<SubjectStatus | null>(null)
+  const [editingCorrelatives, setEditingCorrelatives] = useState(false)
+  const [studyAIOpen, setStudyAIOpen] = useState(false)
 
   const subject = subjects.find(s => s.id === subjectId) ?? null
   const lastSubjectRef = useRef<SubjectWithCorrelatives | null>(null)
@@ -46,13 +58,44 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
   const currentGrade = userSubject?.grade ?? null
   const treeState = subjectId ? treeStates[subjectId] : undefined
 
-  const canChangeStatus =
-    treeState === 'disponible' || treeState === 'cursando' || treeState === 'completada'
+  const canChangeStatus = treeState !== undefined && treeState !== 'bloqueada'
 
-  const requiresNames =
-    displaySubject?.requires.map(id => subjects.find(s => s.id === id)?.name).filter(Boolean) ?? []
+  // Correlativas separadas por tipo, con su estado de cumplimiento.
+  type CorrItem = { name: string; met: boolean; status: SubjectStatus }
+  const buildCorrItems = (ids: string[], unblocking: readonly string[]): CorrItem[] =>
+    ids
+      .map(id => {
+        const s = subjects.find(sub => sub.id === id)
+        if (!s) return null
+        const st = getUserSubject(id)?.status ?? 'no_cursada'
+        return { name: s.name, met: unblocking.includes(st), status: st }
+      })
+      .filter((x): x is CorrItem => x !== null)
+
+  const cursarItems = displaySubject
+    ? buildCorrItems(displaySubject.requiresCursar, CURSAR_UNBLOCKING_STATUSES)
+    : []
+  const rendirItems = displaySubject
+    ? buildCorrItems(displaySubject.requiresRendir, UNBLOCKING_STATUSES)
+    : []
   const unlocksNames =
     displaySubject?.unlocks.map(id => subjects.find(s => s.id === id)?.name).filter(Boolean) ?? []
+
+  // Edición de tipo de correlativa: solo en carreras propias (custom/importadas).
+  const canEditCorrelatives = activeCareer?.is_custom === true
+  type EditItem = { id: string; name: string; type: CorrelativeType }
+  const editItems: EditItem[] = displaySubject
+    ? displaySubject.requires
+        .map(id => {
+          const s = subjects.find(sub => sub.id === id)
+          if (!s) return null
+          const type: CorrelativeType = displaySubject.requiresCursar.includes(id)
+            ? 'para_cursar'
+            : 'para_rendir'
+          return { id, name: s.name, type }
+        })
+        .filter((x): x is EditItem => x !== null)
+    : []
 
   async function handleStatusSelect(status: SubjectStatus) {
     if (!subjectId) return
@@ -77,6 +120,7 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
   }
 
   return (
+    <>
     <BottomSheet isOpen={subjectId !== null} onClose={onClose}>
       {displaySubject && (
         <div className="px-5 py-4 space-y-5 pb-8">
@@ -115,10 +159,27 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
             <div className="rounded-xl bg-bg-elevated border border-muted/50 px-4 py-3 flex items-start gap-2">
               <span className="text-base mt-0.5">🔒</span>
               <p className="text-sm text-text-secondary">
-                Bloqueada. Aprobá las correlativas primero.
+                Bloqueada. Te faltan correlativas para poder cursarla.
               </p>
             </div>
           )}
+
+          {/* Estudiar con IA */}
+          <button
+            onClick={() => setStudyAIOpen(true)}
+            className="w-full flex items-center gap-3 rounded-2xl bg-accent/10 border border-accent/25 px-4 py-3 hover:bg-accent/15 active:scale-[0.99] transition-all text-left"
+          >
+            <span className="text-xl">🤖</span>
+            <span className="flex-1">
+              <span className="block text-sm font-semibold text-text-primary">
+                Estudiar con IA
+              </span>
+              <span className="block text-xs text-text-secondary">
+                Quiz, resumen y flashcards
+              </span>
+            </span>
+            <span className="text-accent">›</span>
+          </button>
 
           {/* Selector de estado */}
           {canChangeStatus && (
@@ -186,20 +247,45 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
             )}
           </AnimatePresence>
 
-          {/* Correlativas requeridas */}
-          {requiresNames.length > 0 && (
+          {/* Correlativas para cursar */}
+          {cursarItems.length > 0 && (
             <div>
               <p className="text-xs font-medium text-text-secondary uppercase tracking-wider mb-2">
-                Requiere aprobar
+                Para cursar necesitás
               </p>
-              <div className="flex flex-wrap gap-2">
-                {requiresNames.map(name => (
-                  <span
-                    key={name}
-                    className="text-xs bg-bg-elevated border border-muted/50 text-text-secondary px-2.5 py-1 rounded-lg"
-                  >
-                    {name}
-                  </span>
+              <div className="space-y-1.5">
+                {cursarItems.map(item => (
+                  <div key={item.name} className="flex items-center gap-2 text-sm">
+                    <span className={item.met ? 'text-success' : 'text-warning'}>
+                      {item.met ? '✓' : '⚠'}
+                    </span>
+                    <span className="text-text-primary">{item.name}</span>
+                    <span className="text-xs text-text-secondary ml-auto">
+                      {STATUS_LABELS[item.status]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Correlativas para rendir el final */}
+          {rendirItems.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-text-secondary uppercase tracking-wider mb-2">
+                Para rendir el final necesitás
+              </p>
+              <div className="space-y-1.5">
+                {rendirItems.map(item => (
+                  <div key={item.name} className="flex items-center gap-2 text-sm">
+                    <span className={item.met ? 'text-success' : 'text-red-400'}>
+                      {item.met ? '✓' : '✗'}
+                    </span>
+                    <span className="text-text-primary">{item.name}</span>
+                    <span className="text-xs text-text-secondary ml-auto">
+                      {item.met ? 'aprobada' : STATUS_LABELS[item.status]}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -224,10 +310,62 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
             </div>
           )}
 
+          {/* Editar tipo de correlativas (solo carreras propias) */}
+          {canEditCorrelatives && editItems.length > 0 && (
+            <div>
+              <button
+                onClick={() => setEditingCorrelatives(v => !v)}
+                className="text-xs font-medium text-accent hover:text-accent/80 transition-colors"
+              >
+                {editingCorrelatives ? 'Listo' : 'Editar correlativas'}
+              </button>
+
+              {editingCorrelatives && (
+                <div className="mt-3 space-y-2.5">
+                  {editItems.map(item => {
+                    const key = `${displaySubject!.id}:${item.id}`
+                    const isSaving = savingKey === key
+                    return (
+                      <div key={item.id} className="space-y-1">
+                        <p className="text-sm text-text-primary">{item.name}</p>
+                        <div className="flex gap-1.5">
+                          {(['para_cursar', 'para_rendir'] as const).map(t => (
+                            <button
+                              key={t}
+                              disabled={isSaving}
+                              onClick={() =>
+                                updateType(displaySubject!.id, item.id, item.type, t)
+                              }
+                              className={`flex-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 ${
+                                item.type === t
+                                  ? 'bg-accent text-white'
+                                  : 'bg-bg-elevated text-text-secondary border border-muted/50'
+                              }`}
+                            >
+                              {t === 'para_cursar' ? 'Para cursar' : 'Para rendir'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Contenido extra (ej: próximos eventos de agenda) */}
           {extraContent}
         </div>
       )}
     </BottomSheet>
+
+    <StudyAISheet
+      subjectId={subjectId}
+      subjectName={displaySubject?.name ?? ''}
+      isOpen={studyAIOpen}
+      onClose={() => setStudyAIOpen(false)}
+    />
+    </>
   )
 }

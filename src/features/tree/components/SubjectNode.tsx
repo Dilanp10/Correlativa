@@ -11,7 +11,8 @@ export interface SubjectNodeData {
 
 const STATE_ICON: Record<TreeNodeState, string> = {
   bloqueada: '🔒',
-  disponible: '✦',
+  disponible_cursar: '✦',
+  disponible_rendir: '✦',
   cursando: '◉',
   completada: '✓',
 }
@@ -19,14 +20,16 @@ const STATE_ICON: Record<TreeNodeState, string> = {
 // Inline styles porque los valores de color del tema no son accesibles en JS
 const BORDER: Record<TreeNodeState, string> = {
   bloqueada: '#3A3A4A',
-  disponible: 'rgba(108,99,255,0.55)',
+  disponible_cursar: 'rgba(108,99,255,0.55)',
+  disponible_rendir: 'rgba(34,211,238,0.6)', // cyan: fase de final
   cursando: 'rgba(245,158,11,0.65)',
   completada: 'rgba(34,197,94,0.6)',
 }
 
 const BG: Record<TreeNodeState, string> = {
   bloqueada: '#111118',
-  disponible: '#111118',
+  disponible_cursar: '#111118',
+  disponible_rendir: 'rgba(34,211,238,0.05)',
   cursando: 'rgba(245,158,11,0.06)',
   completada: 'rgba(34,197,94,0.07)',
 }
@@ -47,6 +50,7 @@ export function SubjectNode({ data }: NodeProps) {
 
       <div
         style={{
+          position: 'relative',
           borderColor: BORDER[d.treeState],
           backgroundColor: BG[d.treeState],
           opacity: d.treeState === 'bloqueada' ? 0.5 : 1,
@@ -60,6 +64,25 @@ export function SubjectNode({ data }: NodeProps) {
           userSelect: 'none',
         }}
       >
+        {d.treeState === 'disponible_rendir' && (
+          <span
+            style={{
+              position: 'absolute',
+              top: -8,
+              right: -6,
+              fontSize: 8,
+              fontWeight: 800,
+              letterSpacing: 0.5,
+              color: '#0A0A0F',
+              background: '#22D3EE',
+              borderRadius: 6,
+              padding: '2px 5px',
+              lineHeight: 1,
+            }}
+          >
+            FINAL
+          </span>
+        )}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
           <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>
             {STATE_ICON[d.treeState]}

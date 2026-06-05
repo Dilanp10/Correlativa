@@ -9,7 +9,17 @@ export type SubjectStatus =
   | 'final_pendiente'
   | 'libre'
 
-export type TreeNodeState = 'bloqueada' | 'disponible' | 'cursando' | 'completada'
+// v2: `disponible` se separa en dos estados según el tipo de correlativa cumplida.
+//   - disponible_cursar: cumplís las correlativas "para cursar" → podés inscribirte
+//   - disponible_rendir: ya regularizaste la materia → vas camino al final
+export type TreeNodeState =
+  | 'bloqueada'
+  | 'disponible_cursar'
+  | 'disponible_rendir'
+  | 'cursando'
+  | 'completada'
+
+export type CorrelativeType = 'para_cursar' | 'para_rendir'
 
 export type AgendaEventType = 'examen' | 'entrega' | 'recordatorio'
 
@@ -52,6 +62,7 @@ export interface Subject {
 export interface SubjectCorrelative {
   subject_id: string
   requires_subject_id: string
+  type: CorrelativeType
   created_at: string
 }
 
@@ -128,7 +139,12 @@ export interface UserStudySession {
 // ── Tipos compuestos ──────────────────────────────────────────────────────────
 
 export interface SubjectWithCorrelatives extends Subject {
+  /** Unión de todas las correlativas (cualquier tipo). Se usa para los edges del árbol. */
   requires: string[]
+  /** Correlativas que hay que tener regularizadas/aprobadas para CURSAR esta materia. */
+  requiresCursar: string[]
+  /** Correlativas que hay que tener aprobadas para RENDIR el final de esta materia. */
+  requiresRendir: string[]
   unlocks: string[]
 }
 
