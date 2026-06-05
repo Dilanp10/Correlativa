@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import BottomNav from '@/shared/components/BottomNav'
@@ -7,10 +7,12 @@ import { useStudyStore } from '@/features/study/store/studyStore'
 import { useGenerateQuiz } from '@/features/study/hooks/useGenerateQuiz'
 import { useStudySessions } from '@/features/study/hooks/useStudySessions'
 import SubjectPicker from '@/features/study/components/SubjectPicker'
-import ModeToggle from '@/features/study/components/ModeToggle'
+import StudyToolSelector, { type StudyTool } from '@/features/study/components/StudyToolSelector'
 import QuizQuestion from '@/features/study/components/QuizQuestion'
 import ExerciseCard from '@/features/study/components/ExerciseCard'
 import QuizSummary from '@/features/study/components/QuizSummary'
+import SummaryView from '@/features/study-ai/components/SummaryView'
+import FlashcardsView from '@/features/study-ai/components/FlashcardsView'
 import { scoreQuiz } from '@/features/study/lib/quiz'
 import { scoreExercises } from '@/features/study/lib/exercise'
 import { ROUTES } from '@/shared/constants'
@@ -42,6 +44,22 @@ export default function StudyPage() {
   const resetToPicking = useStudyStore(s => s.resetToPicking)
 
   const streakUpdatedRef = useRef(false)
+
+  // Herramienta de estudio de alto nivel. quiz/exercises usan el motor existente
+  // (studyStore); summary/flashcards usan las vistas de IA.
+  const [tool, setTool] = useState<StudyTool>(mode === 'exercises' ? 'exercises' : 'quiz')
+
+  function handleToolChange(t: StudyTool) {
+    setTool(t)
+    if (t === 'quiz' || t === 'exercises') {
+      setMode(t)
+      resetToPicking(true)
+    }
+  }
+
+  const isAITool = tool === 'summary' || tool === 'flashcards'
+  const selectedSubjectName =
+    subjects.find(s => s.id === selectedSubjectId)?.name ?? ''
 
   useEffect(() => {
     return () => {
@@ -91,9 +109,7 @@ export default function StudyPage() {
         <h1 className="text-2xl font-bold text-text-primary">Estudiar</h1>
         {phase === 'picking' && (
           <p className="text-sm text-text-secondary mt-0.5">
-            {mode === 'exercises'
-              ? 'Resolvé ejercicios generados por IA y aprendé el paso a paso.'
-              : 'Generá un quiz corto de cualquier materia con IA.'}
+            Elegí una herramienta y reforzá cualquier materia con IA.
           </p>
         )}
       </div>
@@ -116,10 +132,10 @@ export default function StudyPage() {
           </div>
         )}
 
-        {/* Picking */}
-        {!isEmpty && phase === 'picking' && (
+        {/* Picking — Quiz / Ejercicios */}
+        {!isEmpty && !isAITool && phase === 'picking' && (
           <div className="flex flex-col gap-5">
-            <ModeToggle mode={mode} onChange={setMode} />
+            <StudyToolSelector value={tool} onChange={handleToolChange} />
             <SubjectPicker
               subjects={subjects}
               selectedSubjectId={selectedSubjectId}
@@ -133,8 +149,55 @@ export default function StudyPage() {
           </div>
         )}
 
+        {/* IA — Resumen / Flashcards */}
+        {!isEmpty && isAITool && (
+          <div className="flex flex-col gap-5">
+            <StudyToolSelector value={tool} onChange={handleToolChange} />
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+                Materia
+              </label>
+              <select
+                value={selectedSubjectId ?? ''}
+                onChange={e => setSubjectId(e.target.value || null)}
+                className="w-full bg-bg-elevated border border-muted rounded-xl px-3 py-2.5 text-text-primary text-sm focus:outline-none focus:border-accent transition-colors"
+              >
+                <option value="">Elegí una materia</option>
+                {subjects.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedSubjectId ? (
+              <div className="-mx-5">
+                {tool === 'summary' ? (
+                  <SummaryView
+                    key={selectedSubjectId}
+                    subjectId={selectedSubjectId}
+                    subjectName={selectedSubjectName}
+                  />
+                ) : (
+                  <FlashcardsView
+                    key={selectedSubjectId}
+                    subjectId={selectedSubjectId}
+                    subjectName={selectedSubjectName}
+                  />
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary text-center pt-4">
+                Elegí una materia para empezar.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Generating */}
-        {phase === 'generating' && (
+        {!isAITool && phase === 'generating' && (
           <div className="flex flex-col items-center gap-4 pt-20">
             <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin" />
             <p className="text-text-primary font-medium">{generatingLabel}</p>
@@ -149,7 +212,7 @@ export default function StudyPage() {
         )}
 
         {/* Playing — Quiz */}
-        {phase === 'playing' && mode === 'quiz' && quiz && (
+        {!isAITool && phase === 'playing' && mode === 'quiz' && quiz && (
           <AnimatePresence mode="wait">
             <QuizQuestion
               key={currentIndex}
@@ -165,7 +228,7 @@ export default function StudyPage() {
         )}
 
         {/* Playing — Ejercicios */}
-        {phase === 'playing' && mode === 'exercises' && exerciseSet && (
+        {!isAITool && phase === 'playing' && mode === 'exercises' && exerciseSet && (
           <AnimatePresence mode="wait">
             <ExerciseCard
               key={currentIndex}
@@ -181,7 +244,7 @@ export default function StudyPage() {
         )}
 
         {/* Summary */}
-        {phase === 'summary' && result && (
+        {!isAITool && phase === 'summary' && result && (
           <QuizSummary
             result={result}
             streakUpdated={streakUpdatedRef.current}
@@ -191,7 +254,7 @@ export default function StudyPage() {
         )}
 
         {/* Error */}
-        {phase === 'error' && error && (
+        {!isAITool && phase === 'error' && error && (
           <div className="flex flex-col items-center text-center gap-4 pt-16 px-4">
             <p className="text-4xl">⚠️</p>
             <p className="text-text-primary font-semibold">Algo salió mal</p>

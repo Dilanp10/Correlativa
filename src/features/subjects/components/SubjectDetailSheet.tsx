@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import BottomSheet from '@/shared/components/BottomSheet'
 import Badge from '@/shared/components/Badge'
@@ -6,13 +7,14 @@ import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
 import { useUserSubjects } from '@/features/subjects/hooks/useUserSubjects'
 import { useCareerStore } from '@/features/career/store/careerStore'
 import { useCorrelatives } from '@/features/correlatives/hooks/useCorrelatives'
-import StudyAISheet from '@/features/study-ai/components/StudyAISheet'
+import { useStudyStore } from '@/features/study/store/studyStore'
 import type { CorrelativeType } from '@/shared/types'
 import type { SubjectStatus, SubjectWithCorrelatives } from '@/shared/types'
 import {
   STATUS_LABELS,
   UNBLOCKING_STATUSES,
   CURSAR_UNBLOCKING_STATUSES,
+  ROUTES,
 } from '@/shared/constants'
 
 const ALL_STATUSES: SubjectStatus[] = [
@@ -42,11 +44,21 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
   const { updateStatus } = useUserSubjects()
   const activeCareer = useCareerStore(s => s.activeCareer)
   const { updateType, savingKey } = useCorrelatives()
+  const navigate = useNavigate()
 
   const [gradeInput, setGradeInput] = useState('')
   const [pendingStatus, setPendingStatus] = useState<SubjectStatus | null>(null)
   const [editingCorrelatives, setEditingCorrelatives] = useState(false)
-  const [studyAIOpen, setStudyAIOpen] = useState(false)
+
+  // Lleva a la página Estudiar con esta materia ya seleccionada.
+  function goToStudy() {
+    if (!subjectId) return
+    const study = useStudyStore.getState()
+    study.resetAll()
+    study.setSubjectId(subjectId)
+    onClose()
+    navigate(ROUTES.STUDY)
+  }
 
   const subject = subjects.find(s => s.id === subjectId) ?? null
   const lastSubjectRef = useRef<SubjectWithCorrelatives | null>(null)
@@ -120,7 +132,6 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
   }
 
   return (
-    <>
     <BottomSheet isOpen={subjectId !== null} onClose={onClose}>
       {displaySubject && (
         <div className="px-5 py-4 space-y-5 pb-8">
@@ -166,7 +177,7 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
 
           {/* Estudiar con IA */}
           <button
-            onClick={() => setStudyAIOpen(true)}
+            onClick={goToStudy}
             className="w-full flex items-center gap-3 rounded-2xl bg-accent/10 border border-accent/25 px-4 py-3 hover:bg-accent/15 active:scale-[0.99] transition-all text-left"
           >
             <span className="text-xl">🤖</span>
@@ -359,13 +370,5 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
         </div>
       )}
     </BottomSheet>
-
-    <StudyAISheet
-      subjectId={subjectId}
-      subjectName={displaySubject?.name ?? ''}
-      isOpen={studyAIOpen}
-      onClose={() => setStudyAIOpen(false)}
-    />
-    </>
   )
 }

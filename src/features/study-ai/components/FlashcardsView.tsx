@@ -6,7 +6,7 @@ import type { FlashcardSetWithCards, FlashcardStatus } from '@/shared/types/v2'
 interface Props {
   subjectId: string
   subjectName: string
-  onBack: () => void
+  onBack?: () => void
 }
 
 export default function FlashcardsView({ subjectId, subjectName, onBack }: Props) {
@@ -56,12 +56,14 @@ export default function FlashcardsView({ subjectId, subjectName, onBack }: Props
   // ── Formulario + lista de sets ───────────────────────────────────────────────
   return (
     <div className="px-5 py-4 space-y-4 pb-8">
-      <button
-        onClick={onBack}
-        className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-      >
-        ← Modos
-      </button>
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+        >
+          ← Modos
+        </button>
+      )}
 
       <div className="space-y-2">
         <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">

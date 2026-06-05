@@ -5,7 +5,7 @@ import type { StudyNote } from '@/shared/types/v2'
 interface Props {
   subjectId: string
   subjectName: string
-  onBack: () => void
+  onBack?: () => void
 }
 
 // Renderiza el cuerpo del resumen (title + keyPoints + content).
@@ -115,12 +115,14 @@ export default function SummaryView({ subjectId, subjectName, onBack }: Props) {
   // ── Formulario + lista de guardados ──────────────────────────────────────────
   return (
     <div className="px-5 py-4 space-y-4 pb-8">
-      <button
-        onClick={onBack}
-        className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-      >
-        ← Modos
-      </button>
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+        >
+          ← Modos
+        </button>
+      )}
 
       <div className="space-y-2">
         <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">
