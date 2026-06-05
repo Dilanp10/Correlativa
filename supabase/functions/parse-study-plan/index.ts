@@ -441,15 +441,39 @@ async function handleSave(req: Request, authHeader: string): Promise<Response> {
     existingByNormName.set(normalize(row.name), row.id)
   }
 
-  // Filtramos las que no existen para insertarlas. Las que ya existen las
-  // contamos como skipped.
+  // Las que no existen se insertan. Las que ya existen se ACTUALIZAN
+  // (año + cuatrimestre) para reflejar una reimportación corregida.
   const toInsert: typeof subjectRows = []
+  const toUpdate: { id: string; year: number; semester: number }[] = []
   let skipped = 0
   for (const row of subjectRows) {
-    if (existingByNormName.has(normalize(row.name))) {
+    const existingId = existingByNormName.get(normalize(row.name))
+    if (existingId) {
       skipped++
+      toUpdate.push({ id: existingId, year: row.year, semester: row.semester })
     } else {
       toInsert.push(row)
+    }
+  }
+
+  // Actualizamos año/cuatrimestre de las existentes, agrupando por (year, semester)
+  // para minimizar la cantidad de queries.
+  if (toUpdate.length > 0) {
+    const byYearSem = new Map<string, string[]>()
+    for (const u of toUpdate) {
+      const key = `${u.year}:${u.semester}`
+      if (!byYearSem.has(key)) byYearSem.set(key, [])
+      byYearSem.get(key)!.push(u.id)
+    }
+    for (const [key, ids] of byYearSem.entries()) {
+      const [year, semester] = key.split(':').map(Number)
+      const { error: updErr } = await admin
+        .from('subjects')
+        .update({ year, semester })
+        .in('id', ids)
+      if (updErr) {
+        console.error('[parse-study-plan] error actualizando año/cuatrimestre:', updErr)
+      }
     }
   }
 
