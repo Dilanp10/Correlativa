@@ -49,7 +49,8 @@ export default function TreePage() {
         <div className="flex items-center gap-4 flex-wrap">
           {([
             { icon: '🔒', label: 'Bloqueada',  color: 'text-text-secondary' },
-            { icon: '✦',  label: 'Disponible', color: 'text-accent' },
+            { icon: '✦',  label: 'Para cursar', color: 'text-accent' },
+            { icon: 'FINAL', label: 'Para rendir', color: 'text-cyan-400' },
             { icon: '◉',  label: 'Cursando',   color: 'text-warning' },
             { icon: '✓',  label: 'Completada', color: 'text-success' },
           ] as const).map(({ icon, label, color }) => (

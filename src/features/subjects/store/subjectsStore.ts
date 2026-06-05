@@ -6,17 +6,19 @@ import type {
   SubjectStatus,
   CareerProgress,
 } from '@/shared/types'
-import { UNBLOCKING_STATUSES } from '@/shared/constants'
+import { UNBLOCKING_STATUSES, CURSAR_UNBLOCKING_STATUSES } from '@/shared/constants'
 
 type UnblockingStatus = typeof UNBLOCKING_STATUSES[number]
+type CursarUnblockingStatus = typeof CURSAR_UNBLOCKING_STATUSES[number]
 
 export function computeTreeStates(
   subjects: SubjectWithCorrelatives[],
   userSubjects: UserSubject[]
 ): Record<string, TreeNodeState> {
-  const unlockedIds = new Set(
+  // Materias regularizadas o mejor (para correlativas "para cursar").
+  const regularizedIds = new Set(
     userSubjects
-      .filter(us => UNBLOCKING_STATUSES.includes(us.status as UnblockingStatus))
+      .filter(us => CURSAR_UNBLOCKING_STATUSES.includes(us.status as CursarUnblockingStatus))
       .map(us => us.subject_id)
   )
 
@@ -30,11 +32,16 @@ export function computeTreeStates(
     let treeState: TreeNodeState
 
     if (UNBLOCKING_STATUSES.includes(userStatus as UnblockingStatus)) {
+      // Aprobada o promocionada → completada.
       treeState = 'completada'
     } else if (userStatus === 'cursando') {
       treeState = 'cursando'
-    } else if (subject.requires.every(reqId => unlockedIds.has(reqId))) {
-      treeState = 'disponible'
+    } else if (userStatus === 'regular' || userStatus === 'final_pendiente') {
+      // Ya regularizó la cursada → el próximo paso es rendir el final.
+      treeState = 'disponible_rendir'
+    } else if (subject.requiresCursar.every(reqId => regularizedIds.has(reqId))) {
+      // Cumple las correlativas para cursar → puede inscribirse.
+      treeState = 'disponible_cursar'
     } else {
       treeState = 'bloqueada'
     }
@@ -55,7 +62,7 @@ export function computeCareerProgress(
     UNBLOCKING_STATUSES.includes(us.status as UnblockingStatus)
   ).length
   const inProgress = userSubjects.filter(us => us.status === 'cursando').length
-  const available = Object.values(treeStates).filter(s => s === 'disponible').length
+  const available = Object.values(treeStates).filter(s => s === 'disponible_cursar').length
   const blocked = Object.values(treeStates).filter(s => s === 'bloqueada').length
   const gradesWithValue = userSubjects.filter(us => us.grade !== null)
   const averageGrade =
@@ -88,6 +95,11 @@ interface SubjectsStore {
   rollbackUpdate(subjectId: string, prev: UserSubject | undefined): void
   getUserSubject(subjectId: string): UserSubject | undefined
   getProgress(): CareerProgress
+  setCorrelativeType(
+    subjectId: string,
+    requiresSubjectId: string,
+    newType: 'para_cursar' | 'para_rendir'
+  ): void
   reset(): void
 }
 
@@ -159,6 +171,21 @@ export const useSubjectsStore = create<SubjectsStore>((set, get) => ({
   getProgress() {
     const { subjects, userSubjects, treeStates } = get()
     return computeCareerProgress(subjects, userSubjects, treeStates)
+  },
+
+  setCorrelativeType(subjectId, requiresSubjectId, newType) {
+    const state = get()
+    const subjects = state.subjects.map(s => {
+      if (s.id !== subjectId) return s
+      // Sacamos la correlativa de ambos arrays y la metemos en el que corresponde.
+      const requiresCursar = s.requiresCursar.filter(id => id !== requiresSubjectId)
+      const requiresRendir = s.requiresRendir.filter(id => id !== requiresSubjectId)
+      if (newType === 'para_cursar') requiresCursar.push(requiresSubjectId)
+      else requiresRendir.push(requiresSubjectId)
+      return { ...s, requiresCursar, requiresRendir }
+    })
+
+    set({ subjects, treeStates: computeTreeStates(subjects, state.userSubjects) })
   },
 
   reset() {

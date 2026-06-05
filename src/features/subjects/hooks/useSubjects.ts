@@ -49,7 +49,7 @@ export function useSubjects() {
         const [{ data: corrData }, { data: userSubjectsData }] = await Promise.all([
           supabase
             .from('subject_correlatives')
-            .select('subject_id, requires_subject_id')
+            .select('subject_id, requires_subject_id, type')
             .in('subject_id', subjectIds),
           supabase
             .from('user_subjects')
@@ -62,15 +62,27 @@ export function useSubjects() {
 
         const correlatives = corrData ?? []
 
-        const subjectsWithCorr: SubjectWithCorrelatives[] = rawSubjects.map(subject => ({
-          ...subject,
-          requires: correlatives
-            .filter(c => c.subject_id === subject.id)
-            .map(c => c.requires_subject_id),
-          unlocks: correlatives
-            .filter(c => c.requires_subject_id === subject.id)
-            .map(c => c.subject_id),
-        }))
+        const subjectsWithCorr: SubjectWithCorrelatives[] = rawSubjects.map(subject => {
+          const own = correlatives.filter(c => c.subject_id === subject.id)
+          const requiresCursar = own
+            .filter(c => c.type === 'para_cursar')
+            .map(c => c.requires_subject_id)
+          const requiresRendir = own
+            .filter(c => c.type === 'para_rendir')
+            .map(c => c.requires_subject_id)
+          // Unión sin duplicados (para los edges del árbol).
+          const requires = Array.from(new Set(own.map(c => c.requires_subject_id)))
+
+          return {
+            ...subject,
+            requires,
+            requiresCursar,
+            requiresRendir,
+            unlocks: correlatives
+              .filter(c => c.requires_subject_id === subject.id)
+              .map(c => c.subject_id),
+          }
+        })
 
         useSubjectsStore.getState().setSubjects(subjectsWithCorr)
         useSubjectsStore.getState().setUserSubjects(userSubjectsData ?? [])
