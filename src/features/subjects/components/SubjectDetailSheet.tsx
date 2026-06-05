@@ -159,7 +159,7 @@ export default function SubjectDetailSheet({ subjectId, onClose, extraContent }:
             <div className="rounded-xl bg-bg-elevated border border-muted/50 px-4 py-3 flex items-start gap-2">
               <span className="text-base mt-0.5">🔒</span>
               <p className="text-sm text-text-secondary">
-                Bloqueada. Aprobá las correlativas primero.
+                Bloqueada. Te faltan correlativas para poder cursarla.
               </p>
             </div>
           )}

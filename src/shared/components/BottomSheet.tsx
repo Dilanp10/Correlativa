@@ -6,16 +6,20 @@ interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   title?: string
+  /** Eleva el sheet por encima de otro sheet (para sheets anidados). */
+  elevated?: boolean
 }
 
-export default function BottomSheet({ isOpen, onClose, children, title }: BottomSheetProps) {
+export default function BottomSheet({ isOpen, onClose, children, title, elevated }: BottomSheetProps) {
+  const overlayZ = elevated ? 'z-[60]' : 'z-40'
+  const sheetZ = elevated ? 'z-[70]' : 'z-50'
   return (
     <AnimatePresence>
       {isOpen && (
         <>
           <motion.div
             key="overlay"
-            className="fixed inset-0 bg-black/60 z-40"
+            className={`fixed inset-0 bg-black/60 ${overlayZ}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -23,7 +27,7 @@ export default function BottomSheet({ isOpen, onClose, children, title }: Bottom
           />
           <motion.div
             key="sheet"
-            className="fixed bottom-0 left-1/2 w-full max-w-md z-50 bg-bg-surface rounded-t-2xl max-h-[88vh] flex flex-col"
+            className={`fixed bottom-0 left-1/2 w-full max-w-md ${sheetZ} bg-bg-surface rounded-t-2xl max-h-[88vh] flex flex-col`}
             initial={{ y: '100%', x: '-50%' }}
             animate={{ y: 0, x: '-50%' }}
             exit={{ y: '100%', x: '-50%' }}

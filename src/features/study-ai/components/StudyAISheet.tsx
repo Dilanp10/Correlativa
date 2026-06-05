@@ -49,7 +49,12 @@ export default function StudyAISheet({ subjectId, subjectName, isOpen, onClose }
   }
 
   return (
-    <BottomSheet isOpen={isOpen && subjectId !== null} onClose={handleClose} title="🤖 Estudiar con IA">
+    <BottomSheet
+      isOpen={isOpen && subjectId !== null}
+      onClose={handleClose}
+      title="🤖 Estudiar con IA"
+      elevated
+    >
       {mode === 'menu' && (
         <div className="px-5 py-4 space-y-5 pb-8">
           <p className="text-sm text-text-secondary">

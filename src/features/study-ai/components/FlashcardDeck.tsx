@@ -131,10 +131,10 @@ export default function FlashcardDeck({ cards, onMark, onExit }: Props) {
 
           {/* Dorso: respuesta */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-accent/10 border border-accent/30 px-5 py-8"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-accent/10 border border-accent/30 px-5 py-6 overflow-y-auto"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
-            <span className="text-[10px] font-bold uppercase tracking-wider text-accent">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-accent shrink-0">
               Respuesta
             </span>
             <p className="text-sm text-text-primary text-center leading-relaxed">{card.answer}</p>

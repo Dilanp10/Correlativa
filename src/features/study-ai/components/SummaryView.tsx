@@ -39,7 +39,9 @@ function SummaryBody({
       )}
 
       <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
-        {content}
+        {/* La IA puede devolver **negrita** de Markdown; lo limpiamos para que
+            no se vea el asterisco crudo (no renderizamos Markdown en v2). */}
+        {content.replace(/\*\*/g, '')}
       </p>
     </div>
   )
