@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import BottomSheet from '@/shared/components/BottomSheet'
 import SummaryView from '@/features/study-ai/components/SummaryView'
+import FlashcardsView from '@/features/study-ai/components/FlashcardsView'
 
 type Mode = 'menu' | 'quiz' | 'summary' | 'flashcards'
 
@@ -78,7 +79,13 @@ export default function StudyAISheet({ subjectId, subjectName, isOpen, onClose }
           onBack={() => setMode('menu')}
         />
       )}
-      {mode === 'flashcards' && <ComingSoon label="Flashcards" onBack={() => setMode('menu')} />}
+      {mode === 'flashcards' && subjectId && (
+        <FlashcardsView
+          subjectId={subjectId}
+          subjectName={subjectName}
+          onBack={() => setMode('menu')}
+        />
+      )}
     </BottomSheet>
   )
 }
