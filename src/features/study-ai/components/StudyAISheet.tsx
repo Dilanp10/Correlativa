@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import BottomSheet from '@/shared/components/BottomSheet'
+import SummaryView from '@/features/study-ai/components/SummaryView'
 
 type Mode = 'menu' | 'quiz' | 'summary' | 'flashcards'
 
@@ -70,7 +71,13 @@ export default function StudyAISheet({ subjectId, subjectName, isOpen, onClose }
       )}
 
       {mode === 'quiz' && <ComingSoon label="Quiz" onBack={() => setMode('menu')} />}
-      {mode === 'summary' && <ComingSoon label="Resumen" onBack={() => setMode('menu')} />}
+      {mode === 'summary' && subjectId && (
+        <SummaryView
+          subjectId={subjectId}
+          subjectName={subjectName}
+          onBack={() => setMode('menu')}
+        />
+      )}
       {mode === 'flashcards' && <ComingSoon label="Flashcards" onBack={() => setMode('menu')} />}
     </BottomSheet>
   )
