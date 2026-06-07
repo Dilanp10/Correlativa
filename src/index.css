@@ -35,3 +35,23 @@
     border-radius: 3px;
   }
 }
+
+/* Accesibilidad / performance: si el usuario prefiere menos movimiento,
+   reducimos animaciones largas y desactivamos backdrop-filter (que puede
+   causar jank en devices low-end). Spec: 009-v3 T016. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Nodos del árbol: sin blur, opacidad ligeramente mayor para mantener
+     legibilidad del estado disponible. */
+  .react-flow__node-subject [style*="backdrop-filter"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
