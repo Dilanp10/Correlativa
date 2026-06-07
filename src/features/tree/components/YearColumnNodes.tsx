@@ -1,7 +1,11 @@
 import type { NodeProps } from '@xyflow/react'
 
 // Nodos decorativos (no interactivos) que dan estructura visual al árbol:
-// un panel de fondo por año y una etiqueta por cuatrimestre.
+// - YearPanelNode: panel de fondo por año, con título arriba
+// - CuatLabelNode: etiqueta de cuatrimestre dentro de cada año
+//
+// Spec: specs/009-competitive-ui-redesign/contracts/ui-contracts.md §3
+// Colores: usan `var(--accent-rgb)` para reflejar la carrera activa.
 
 export interface YearPanelData {
   label: string
@@ -21,9 +25,9 @@ export function YearPanelNode({ data }: NodeProps) {
         width: d.width,
         height: d.height,
         borderRadius: 20,
-        border: '1px solid rgba(108,99,255,0.18)',
+        border: '1px solid rgb(var(--accent-rgb) / 0.15)',
         background:
-          'linear-gradient(180deg, rgba(108,99,255,0.07) 0%, rgba(17,17,24,0.35) 30%)',
+          'linear-gradient(180deg, rgb(var(--accent-rgb) / 0.07) 0%, rgba(17,17,24,0.4) 15%, rgba(17,17,24,0.1) 100%)',
         pointerEvents: 'none',
         boxSizing: 'border-box',
       }}
@@ -33,17 +37,17 @@ export function YearPanelNode({ data }: NodeProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          height: 36,
-          marginTop: 8,
+          height: 48,
+          marginTop: 4,
         }}
       >
         <span
           style={{
-            fontSize: 13,
+            fontSize: 11,
             fontWeight: 800,
-            letterSpacing: 0.4,
+            letterSpacing: 1.5,
             textTransform: 'uppercase',
-            color: '#B9B4FF',
+            color: 'rgb(var(--accent-rgb) / 0.85)',
           }}
         >
           {d.label}
