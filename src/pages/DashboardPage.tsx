@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useCareerStore } from '@/features/career/store/careerStore'
 import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
@@ -9,6 +10,8 @@ import { useStreak } from '@/features/streaks/hooks/useStreak'
 import StreakChip from '@/features/streaks/components/StreakChip'
 import PdfImportBanner from '@/features/pdf-import/components/PdfImportBanner'
 import AvailableNowCard from '@/features/dashboard/components/AvailableNowCard'
+import MilestoneCelebration from '@/features/dashboard/components/MilestoneCelebration'
+import { useMilestoneStore } from '@/features/dashboard/store/milestoneStore'
 import BottomNav from '@/shared/components/BottomNav'
 
 function StatCard({
@@ -37,6 +40,15 @@ export default function DashboardPage() {
   const { display: streakDisplay, loaded: streakLoaded } = useStreak()
 
   const progress = getProgress()
+  const checkMilestone = useMilestoneStore(s => s.checkMilestone)
+
+  // Si el usuario cruzó un umbral de carrera, dispara el modal de celebración.
+  // Se chequea solo cuando los datos están cargados (evita parpadeos al cargar).
+  useEffect(() => {
+    if (isLoading) return
+    if (progress.total === 0) return
+    checkMilestone(progress.percentComplete)
+  }, [isLoading, progress.total, progress.percentComplete, checkMilestone])
 
   return (
     <div className="min-h-screen bg-bg-base flex flex-col pb-20 md:pb-6 md:ml-56">
@@ -126,6 +138,9 @@ export default function DashboardPage() {
       </div>
 
       <BottomNav />
+
+      {/* Modal de celebración al cruzar milestones (25/50/75/100%) */}
+      <MilestoneCelebration />
     </div>
   )
 }
