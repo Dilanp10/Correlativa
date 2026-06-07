@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { ReactFlow, Background, BackgroundVariant } from '@xyflow/react'
-import type { NodeMouseHandler } from '@xyflow/react'
+import type { NodeMouseHandler, ReactFlowInstance, Node } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
@@ -25,6 +25,27 @@ export default function TreePage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
 
   const { nodes, edges } = useTreeLayout()
+
+  // Guardamos la instancia de React Flow para poder hacer fitView focalizado
+  // en los nodos disponibles al montar el árbol (US1: "qué puedo cursar ahora?").
+  const flowRef = useRef<ReactFlowInstance | null>(null)
+  const didInitialFocus = useRef(false)
+
+  function handleInit(instance: ReactFlowInstance) {
+    flowRef.current = instance
+    // Foco inicial: si hay nodos disponibles para cursar, encuadrarlos.
+    // Si no hay, dejamos el fitView por defecto.
+    requestAnimationFrame(() => {
+      if (didInitialFocus.current) return
+      const available = (nodes as Node[]).filter(
+        n => n.type === 'subject' && (n.data as { treeState?: string })?.treeState === 'disponible_cursar'
+      )
+      if (available.length > 0) {
+        instance.fitView({ nodes: available, padding: 0.3, duration: 600 })
+        didInitialFocus.current = true
+      }
+    })
+  }
 
   // onNodeClick es el handler nativo de React Flow — siempre se dispara
   // aunque elementsSelectable=false, a diferencia del onClick en el nodo interno
@@ -85,6 +106,7 @@ export default function TreePage() {
             edges={edges}
             nodeTypes={nodeTypes}
             onNodeClick={handleNodeClick}
+            onInit={handleInit}
             fitView
             fitViewOptions={{ padding: 0.1 }}
             minZoom={0.15}

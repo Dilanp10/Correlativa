@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
 import { useCareerStore } from '@/features/career/store/careerStore'
 import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
 import { useSubjects } from '@/features/subjects/hooks/useSubjects'
@@ -9,8 +8,8 @@ import LevelCard from '@/features/gamification/components/LevelCard'
 import { useStreak } from '@/features/streaks/hooks/useStreak'
 import StreakChip from '@/features/streaks/components/StreakChip'
 import PdfImportBanner from '@/features/pdf-import/components/PdfImportBanner'
+import AvailableNowCard from '@/features/dashboard/components/AvailableNowCard'
 import BottomNav from '@/shared/components/BottomNav'
-import { ROUTES } from '@/shared/constants'
 
 function StatCard({
   label,
@@ -30,7 +29,6 @@ function StatCard({
 }
 
 export default function DashboardPage() {
-  const navigate = useNavigate()
   const activeCareer = useCareerStore(s => s.activeCareer)
   const getProgress = useSubjectsStore(s => s.getProgress)
   const { isLoading } = useSubjects()
@@ -63,31 +61,29 @@ export default function DashboardPage() {
         {/* Banner para importar plan desde PDF (solo si no hay materias) */}
         <PdfImportBanner />
 
-        {/* Nivel (gamificación) */}
-        <LevelCard state={gamificationState} />
+        {/* ⭐ PROTAGONISTA: ¿Qué puedo cursar ahora? */}
+        <AvailableNowCard available={progress.available} isLoading={isLoading} />
 
-        {/* Barra de progreso */}
-        <div className="bg-bg-surface rounded-2xl p-5 border border-muted/30">
-          <div className="flex items-end justify-between mb-3">
-            <div>
-              <p className="text-xs text-text-secondary uppercase tracking-wider font-medium">
-                Progreso de carrera
-              </p>
-              <p className="text-4xl font-bold text-text-primary mt-1">
-                {isLoading ? '—' : `${progress.percentComplete}%`}
-              </p>
-            </div>
-            {!isLoading && progress.total > 0 && (
-              <p className="text-sm text-text-secondary mb-1">
-                {progress.approved} de {progress.total} aprobadas
-              </p>
-            )}
+        {/* Barra de progreso (compacta) */}
+        <div className="bg-bg-surface rounded-2xl p-4 border border-muted/30">
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-xs text-text-secondary uppercase tracking-wider font-medium">
+              Progreso de carrera
+            </p>
+            <p className="text-lg font-bold text-text-primary">
+              {isLoading ? '—' : `${progress.percentComplete}%`}
+              {!isLoading && progress.total > 0 && (
+                <span className="text-xs text-text-secondary font-normal ml-2">
+                  {progress.approved}/{progress.total}
+                </span>
+              )}
+            </p>
           </div>
 
           {isLoading ? (
-            <div className="h-3 bg-muted/40 rounded-full animate-pulse" />
+            <div className="h-2.5 bg-muted/40 rounded-full animate-pulse" />
           ) : (
-            <div className="h-3 bg-bg-elevated rounded-full overflow-hidden">
+            <div className="h-2.5 bg-bg-elevated rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-accent rounded-full"
                 initial={{ width: 0 }}
@@ -98,15 +94,15 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Stats grid */}
+        {/* Stats grid — 3 métricas (la 4ta "Disponibles" se promovió a AvailableNowCard arriba) */}
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-3 gap-3">
+            {[...Array(3)].map((_, i) => (
               <div key={i} className="h-20 rounded-2xl bg-muted/30 animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <StatCard
               label="Aprobadas"
               value={progress.approved}
@@ -118,11 +114,6 @@ export default function DashboardPage() {
               color="text-accent"
             />
             <StatCard
-              label="Disponibles"
-              value={progress.available}
-              color="text-text-primary"
-            />
-            <StatCard
               label="Promedio"
               value={progress.averageGrade !== null ? progress.averageGrade.toFixed(1) : '—'}
               color="text-warning"
@@ -130,21 +121,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* CTA al árbol */}
-        <button
-          onClick={() => navigate(ROUTES.TREE)}
-          className="w-full bg-accent/10 border border-accent/30 rounded-2xl px-5 py-4 flex items-center justify-between hover:bg-accent/15 transition-colors"
-        >
-          <div className="text-left">
-            <p className="text-sm font-semibold text-text-primary">Ver árbol de correlativas</p>
-            <p className="text-xs text-text-secondary mt-0.5">
-              {progress.available > 0
-                ? `Tenés ${progress.available} materia${progress.available !== 1 ? 's' : ''} disponible${progress.available !== 1 ? 's' : ''} para cursar`
-                : 'Visualizá tu progreso completo'}
-            </p>
-          </div>
-          <span className="text-accent text-xl ml-3">→</span>
-        </button>
+        {/* Nivel (gamificación) — baja en jerarquía: ya no es lo primero */}
+        <LevelCard state={gamificationState} />
       </div>
 
       <BottomNav />
