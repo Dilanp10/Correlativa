@@ -11,7 +11,7 @@ const COL_GAP = 56
 const COL_SPACING = PANEL_WIDTH + COL_GAP // 268
 
 const PANEL_PAD_TOP = 8
-const HEADER_H = 40 // alto del título "AÑO N"
+const HEADER_H = 48 // alto del título "AÑO N" (↑ de 40 a 48 para más prominencia)
 const CUAT_LABEL_H = 28 // alto de la etiqueta de cuatrimestre
 const ROW_HEIGHT = 78 // alto aprox del nodo materia + gap
 const SECTION_GAP = 16 // separación entre cuatrimestres
@@ -150,20 +150,22 @@ export function useTreeLayout() {
   const edges = useMemo<Edge[]>(() => {
     return subjects.flatMap(subject =>
       subject.requires.map(reqId => {
-        const reqState = treeStates[reqId]
-        const isCompleted = reqState === 'completada'
+        const sourceState = treeStates[reqId] ?? 'bloqueada'
+        const targetState = treeStates[subject.id] ?? 'bloqueada'
+        const isCompleted = sourceState === 'completada'
 
         return {
           id: `edge-${reqId}-${subject.id}`,
           source: reqId,
           target: subject.id,
-          type: 'smoothstep',
+          // GradientEdge custom: pinta el trazo con un linearGradient entre
+          // el color del estado source y el del target.
+          type: 'gradient',
           animated: isCompleted,
           zIndex: 1,
-          style: {
-            stroke: isCompleted ? '#22C55E' : '#3A3A4A',
-            strokeWidth: isCompleted ? 2 : 1.5,
-            opacity: isCompleted ? 0.85 : 0.4,
+          data: {
+            sourceState,
+            targetState,
           },
         }
       })

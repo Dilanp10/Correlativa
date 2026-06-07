@@ -7,6 +7,7 @@ import { useSubjects } from '@/features/subjects/hooks/useSubjects'
 import { useAgenda } from '@/features/agenda/hooks/useAgenda'
 import { SubjectNode } from '@/features/tree/components/SubjectNode'
 import { YearPanelNode, CuatLabelNode } from '@/features/tree/components/YearColumnNodes'
+import { GradientEdge } from '@/features/tree/components/GradientEdge'
 import { useTreeLayout } from '@/features/tree/hooks/useTreeLayout'
 import SubjectDetailSheet from '@/features/subjects/components/SubjectDetailSheet'
 import SubjectAgendaEvents from '@/features/agenda/components/SubjectAgendaEvents'
@@ -17,6 +18,10 @@ const nodeTypes = {
   subject: SubjectNode,
   yearPanel: YearPanelNode,
   cuatLabel: CuatLabelNode,
+}
+
+const edgeTypes = {
+  gradient: GradientEdge,
 }
 
 export default function TreePage() {
@@ -105,6 +110,7 @@ export default function TreePage() {
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             onNodeClick={handleNodeClick}
             onInit={handleInit}
             fitView
