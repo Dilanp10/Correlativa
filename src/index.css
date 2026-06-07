@@ -3,11 +3,19 @@
 @tailwind utilities;
 
 @layer base {
+  /* Color de acento dinámico por carrera. Default = violeta.
+     careerThemeStore.applyTheme() los reemplaza en runtime. */
+  :root {
+    --accent: #6C63FF;
+    --accent-rgb: 108 99 255;
+  }
+
   html {
     background-color: #0A0A0F;
     color: #F0F0FF;
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   * {

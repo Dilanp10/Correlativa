@@ -9,9 +9,11 @@ export default {
         'bg-base':     '#0A0A0F',
         'bg-surface':  '#111118',
         'bg-elevated': '#1A1A26',
-        // Acento
-        'accent':      '#6C63FF',
-        'accent-glow': '#6C63FF33',
+        // Acento (dinámico vía CSS custom property — cambia según carrera activa)
+        // Usa la sintaxis de Tailwind 3 para opacity-aware utilities:
+        //   bg-accent/10, text-accent, border-accent/30, etc.
+        'accent':      'rgb(var(--accent-rgb) / <alpha-value>)',
+        'accent-glow': 'rgb(var(--accent-rgb) / 0.2)',
         // Estados de materia
         'success':     '#22C55E',
         'warning':     '#F59E0B',
