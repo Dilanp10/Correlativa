@@ -27,26 +27,65 @@ export const ACCENT_PALETTE = {
 // El matching es por keyword: si el nombre incluye alguna keyword del map,
 // se asigna ese color. La keyword más específica (más larga) gana.
 const CAREER_COLOR_KEYWORDS: Array<[string, CareerTheme]> = [
-  ['arquitectura',                     ACCENT_PALETTE.naranja],
+  // STEM / tecnología
   ['ingenieria en informatica',        ACCENT_PALETTE.violeta],
   ['ingenieria en sistemas',           ACCENT_PALETTE.violeta],
-  ['ingenieria',                       ACCENT_PALETTE.cyan],
-  ['medicina',                         ACCENT_PALETTE.rosa],
-  ['derecho',                          ACCENT_PALETTE.amarillo],
-  ['contador',                         ACCENT_PALETTE.esmeralda],
-  ['psicologia',                       ACCENT_PALETTE.rosa],
   ['licenciatura en sistemas',         ACCENT_PALETTE.violeta],
-  ['administracion',                   ACCENT_PALETTE.esmeralda],
-  ['economia',                         ACCENT_PALETTE.esmeralda],
-  ['biologia',                         ACCENT_PALETTE.esmeralda],
-  ['quimica',                          ACCENT_PALETTE.rosa],
+  ['licenciatura en informatica',      ACCENT_PALETTE.violeta],
+  ['ciencia de datos',                 ACCENT_PALETTE.violeta],
+  ['programacion',                     ACCENT_PALETTE.violeta],
+  ['ingenieria',                       ACCENT_PALETTE.cyan],
   ['fisica',                           ACCENT_PALETTE.cyan],
   ['matematica',                       ACCENT_PALETTE.cyan],
+  ['astronomia',                       ACCENT_PALETTE.cyan],
+
+  // Salud
+  ['medicina',                         ACCENT_PALETTE.rosa],
+  ['enfermeria',                       ACCENT_PALETTE.rosa],
+  ['odontologia',                      ACCENT_PALETTE.rosa],
+  ['kinesiologia',                     ACCENT_PALETTE.rosa],
+  ['nutricion',                        ACCENT_PALETTE.rosa],
+  ['farmacia',                         ACCENT_PALETTE.rosa],
+  ['veterinaria',                      ACCENT_PALETTE.rosa],
+  ['bioquimica',                       ACCENT_PALETTE.rosa],
+  ['psicologia',                       ACCENT_PALETTE.rosa],
+  ['quimica',                          ACCENT_PALETTE.rosa],
+
+  // Ciencias naturales / vida
+  ['biologia',                         ACCENT_PALETTE.esmeralda],
+  ['agronomia',                        ACCENT_PALETTE.esmeralda],
+
+  // Negocios / sociales aplicadas
+  ['contador',                         ACCENT_PALETTE.esmeralda],
+  ['administracion',                   ACCENT_PALETTE.esmeralda],
+  ['economia',                         ACCENT_PALETTE.esmeralda],
+  ['comercio',                         ACCENT_PALETTE.esmeralda],
+  ['turismo',                          ACCENT_PALETTE.esmeralda],
+
+  // Humanidades / leyes
+  ['derecho',                          ACCENT_PALETTE.amarillo],
+  ['abogacia',                         ACCENT_PALETTE.amarillo],
   ['letras',                           ACCENT_PALETTE.amarillo],
   ['historia',                         ACCENT_PALETTE.amarillo],
   ['filosofia',                        ACCENT_PALETTE.amarillo],
+  ['ciencia politica',                 ACCENT_PALETTE.amarillo],
+  ['relaciones internacionales',       ACCENT_PALETTE.amarillo],
+  ['sociologia',                       ACCENT_PALETTE.amarillo],
+  ['antropologia',                     ACCENT_PALETTE.amarillo],
+
+  // Educación
   ['educacion',                        ACCENT_PALETTE.rosa],
+  ['profesorado',                      ACCENT_PALETTE.rosa],
+
+  // Arte / diseño / comunicación
+  ['arquitectura',                     ACCENT_PALETTE.naranja],
   ['diseno',                           ACCENT_PALETTE.naranja],
+  ['comunicacion',                     ACCENT_PALETTE.naranja],
+  ['periodismo',                       ACCENT_PALETTE.naranja],
+  ['publicidad',                       ACCENT_PALETTE.naranja],
+  ['bellas artes',                     ACCENT_PALETTE.naranja],
+  ['cine',                             ACCENT_PALETTE.naranja],
+  ['musica',                           ACCENT_PALETTE.naranja],
 ]
 
 /** Quita acentos y pasa a minúsculas para matching. */

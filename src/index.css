@@ -15,7 +15,11 @@
     color: #F0F0FF;
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* Tabular nums para que los números no salten en barras de progreso/stats.
+       cv11 = alternate single-storey 'a' (Inter), ss01 = stylistic set #1. */
+    font-feature-settings: 'cv11', 'ss01', 'tnum';
   }
 
   * {

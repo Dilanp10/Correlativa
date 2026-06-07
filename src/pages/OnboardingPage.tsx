@@ -83,7 +83,7 @@ export default function OnboardingPage() {
             {[1, 2, 3].map(n => (
               <div
                 key={n}
-                className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                className={`h-1 flex-1 rounded-full transition-colors duration-200 ${
                   n <= stepNumber ? 'bg-accent' : 'bg-muted'
                 }`}
               />

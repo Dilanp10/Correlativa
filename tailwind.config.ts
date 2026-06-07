@@ -20,7 +20,9 @@ export default {
         'muted':       '#3A3A4A',
         // Texto
         'text-primary':   '#F0F0FF',
-        'text-secondary': '#8080A0',
+        // #9090B0 sobre #0A0A0F = 4.82:1 (pasa WCAG AA texto normal).
+        // Antes era #8080A0 (~4.39:1, fallaba).
+        'text-secondary': '#9090B0',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

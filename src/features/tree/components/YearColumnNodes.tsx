@@ -67,7 +67,8 @@ export function CuatLabelNode({ data }: NodeProps) {
         fontWeight: 700,
         letterSpacing: 0.5,
         textTransform: 'uppercase',
-        color: '#7A7A95',
+        // #9090B0 sobre #0A0A0F = 4.82:1 (pasa WCAG AA). Antes #7A7A95 (~3.85:1, fallaba).
+        color: '#9090B0',
         display: 'flex',
         alignItems: 'center',
         gap: 6,
@@ -78,7 +79,7 @@ export function CuatLabelNode({ data }: NodeProps) {
         style={{
           flex: 1,
           height: 1,
-          background: 'rgba(122,122,149,0.25)',
+          background: 'rgba(144,144,176,0.28)',
         }}
       />
     </div>

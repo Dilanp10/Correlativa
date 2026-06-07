@@ -113,7 +113,7 @@ export default function FlashcardDeck({ cards, onMark, onExit }: Props) {
           className="relative w-full"
           style={{ transformStyle: 'preserve-3d', minHeight: 200 }}
           animate={{ rotateY: flipped ? 180 : 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.25 }}
         >
           {/* Frente: pregunta */}
           <div

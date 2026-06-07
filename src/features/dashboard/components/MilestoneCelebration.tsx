@@ -53,7 +53,7 @@ export default function MilestoneCelebration() {
               initial={{ scale: 0.8, y: 12 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', damping: 22, stiffness: 320, duration: 0.4 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 320, duration: 0.25 }}
               role="dialog"
               aria-modal="true"
               aria-label={`Hito de carrera: ${pendingMilestone}% completada`}

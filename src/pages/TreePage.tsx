@@ -70,9 +70,9 @@ export default function TreePage() {
         <h1 className="text-xl font-bold text-text-primary">Árbol de correlativas</h1>
       </div>
 
-      {/* Leyenda */}
+      {/* Leyenda — área táctil ≥44px (WCAG AAA 2.5.5) aunque sea decorativa */}
       <div className="px-5 pb-2 shrink-0 w-full max-w-md mx-auto">
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap">
           {([
             { icon: '🔒', label: 'Bloqueada',  color: 'text-text-secondary' },
             { icon: '✦',  label: 'Para cursar', color: 'text-accent' },
@@ -80,7 +80,10 @@ export default function TreePage() {
             { icon: '◉',  label: 'Cursando',   color: 'text-warning' },
             { icon: '✓',  label: 'Completada', color: 'text-success' },
           ] as const).map(({ icon, label, color }) => (
-            <span key={label} className="flex items-center gap-1.5 text-xs text-text-secondary">
+            <span
+              key={label}
+              className="inline-flex items-center gap-1.5 text-xs text-text-secondary px-2 py-2 min-h-[44px]"
+            >
               <span className={`${color} font-bold`}>{icon}</span>
               {label}
             </span>
