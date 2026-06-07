@@ -81,10 +81,33 @@ export function computeCareerProgress(
   }
 }
 
+/**
+ * Detecta qué materias pasaron de `bloqueada` a `disponible_cursar` entre
+ * dos snapshots de `treeStates`. Esto alimenta la animación de "unlock"
+ * en el árbol (US2): cuando el usuario aprueba una correlativa y eso
+ * desbloquea una nueva materia, el nodo nuevo hace un pulse de celebración.
+ *
+ * Pura y testeable.
+ */
+export function diffNewlyAvailable(
+  prev: Record<string, TreeNodeState>,
+  next: Record<string, TreeNodeState>
+): string[] {
+  const newlyAvailable: string[] = []
+  for (const id of Object.keys(next)) {
+    if (next[id] === 'disponible_cursar' && prev[id] === 'bloqueada') {
+      newlyAvailable.push(id)
+    }
+  }
+  return newlyAvailable
+}
+
 interface SubjectsStore {
   subjects: SubjectWithCorrelatives[]
   userSubjects: UserSubject[]
   treeStates: Record<string, TreeNodeState>
+  /** IDs de materias recién desbloqueadas pendientes de animar. */
+  pendingUnlocks: string[]
   isLoading: boolean
   loaded: boolean
 
@@ -100,6 +123,8 @@ interface SubjectsStore {
     requiresSubjectId: string,
     newType: 'para_cursar' | 'para_rendir'
   ): void
+  /** Limpia un id de pendingUnlocks (lo llama el nodo al terminar la animación). */
+  clearUnlock(subjectId: string): void
   reset(): void
 }
 
@@ -107,17 +132,32 @@ export const useSubjectsStore = create<SubjectsStore>((set, get) => ({
   subjects: [],
   userSubjects: [],
   treeStates: {},
+  pendingUnlocks: [],
   isLoading: false,
   loaded: false,
 
   setSubjects(subjects) {
+    // Cargar la lista inicial de subjects NO debe disparar animaciones de
+    // unlock (los pendingUnlocks solo se generan en transiciones reales del
+    // usuario, no en la carga inicial del catálogo).
     const treeStates = computeTreeStates(subjects, get().userSubjects)
     set({ subjects, treeStates, loaded: true })
   },
 
   setUserSubjects(userSubjects) {
-    const treeStates = computeTreeStates(get().subjects, userSubjects)
-    set({ userSubjects, treeStates })
+    const state = get()
+    const prevStates = state.treeStates
+    const nextStates = computeTreeStates(state.subjects, userSubjects)
+    // Solo detectamos unlocks si ya había un snapshot previo poblado
+    // (evita disparar al cargar por primera vez los user_subjects).
+    const newlyAvailable =
+      Object.keys(prevStates).length > 0
+        ? diffNewlyAvailable(prevStates, nextStates)
+        : []
+    const pendingUnlocks = newlyAvailable.length
+      ? Array.from(new Set([...state.pendingUnlocks, ...newlyAvailable]))
+      : state.pendingUnlocks
+    set({ userSubjects, treeStates: nextStates, pendingUnlocks })
   },
 
   setLoading(loading) {
@@ -146,9 +186,16 @@ export const useSubjectsStore = create<SubjectsStore>((set, get) => ({
       ? state.userSubjects.map(us => (us.subject_id === subjectId ? updated : us))
       : [...state.userSubjects, updated]
 
+    const nextStates = computeTreeStates(state.subjects, updatedList)
+    const newlyAvailable = diffNewlyAvailable(state.treeStates, nextStates)
+    const pendingUnlocks = newlyAvailable.length
+      ? Array.from(new Set([...state.pendingUnlocks, ...newlyAvailable]))
+      : state.pendingUnlocks
+
     set({
       userSubjects: updatedList,
-      treeStates: computeTreeStates(state.subjects, updatedList),
+      treeStates: nextStates,
+      pendingUnlocks,
     })
   },
 
@@ -158,9 +205,15 @@ export const useSubjectsStore = create<SubjectsStore>((set, get) => ({
       ? state.userSubjects.map(us => (us.subject_id === subjectId ? prev : us))
       : state.userSubjects.filter(us => us.subject_id !== subjectId)
 
+    // Al revertir, también limpiamos cualquier pendingUnlock que se haya
+    // disparado por la transición revertida.
+    const nextStates = computeTreeStates(state.subjects, updatedList)
+    const pendingUnlocks = state.pendingUnlocks.filter(id => nextStates[id] === 'disponible_cursar')
+
     set({
       userSubjects: updatedList,
-      treeStates: computeTreeStates(state.subjects, updatedList),
+      treeStates: nextStates,
+      pendingUnlocks,
     })
   },
 
@@ -188,7 +241,20 @@ export const useSubjectsStore = create<SubjectsStore>((set, get) => ({
     set({ subjects, treeStates: computeTreeStates(subjects, state.userSubjects) })
   },
 
+  clearUnlock(subjectId) {
+    const state = get()
+    if (!state.pendingUnlocks.includes(subjectId)) return
+    set({ pendingUnlocks: state.pendingUnlocks.filter(id => id !== subjectId) })
+  },
+
   reset() {
-    set({ subjects: [], userSubjects: [], treeStates: {}, isLoading: false, loaded: false })
+    set({
+      subjects: [],
+      userSubjects: [],
+      treeStates: {},
+      pendingUnlocks: [],
+      isLoading: false,
+      loaded: false,
+    })
   },
 }))

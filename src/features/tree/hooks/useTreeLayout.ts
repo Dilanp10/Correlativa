@@ -4,11 +4,11 @@ import { useSubjectsStore } from '@/features/subjects/store/subjectsStore'
 import type { SubjectNodeData } from '@/features/tree/components/SubjectNode'
 
 // ── Dimensiones del layout ────────────────────────────────────────────────────
-const NODE_WIDTH = 160
+const NODE_WIDTH = 180  // ↑ de 160 a 180 para más espacio de texto (3 líneas)
 const PANEL_PAD_X = 16
-const PANEL_WIDTH = NODE_WIDTH + PANEL_PAD_X * 2 // 192
+const PANEL_WIDTH = NODE_WIDTH + PANEL_PAD_X * 2 // 212
 const COL_GAP = 56
-const COL_SPACING = PANEL_WIDTH + COL_GAP // 248
+const COL_SPACING = PANEL_WIDTH + COL_GAP // 268
 
 const PANEL_PAD_TOP = 8
 const HEADER_H = 40 // alto del título "AÑO N"
@@ -34,11 +34,14 @@ export function useTreeLayout() {
   const subjects = useSubjectsStore(s => s.subjects)
   const treeStates = useSubjectsStore(s => s.treeStates)
   const userSubjects = useSubjectsStore(s => s.userSubjects)
+  const pendingUnlocks = useSubjectsStore(s => s.pendingUnlocks)
 
   const userSubjectMap = useMemo(
     () => new Map(userSubjects.map(us => [us.subject_id, us])),
     [userSubjects]
   )
+
+  const pendingSet = useMemo(() => new Set(pendingUnlocks), [pendingUnlocks])
 
   const nodes = useMemo<Node[]>(() => {
     // Agrupar por año.
@@ -105,6 +108,7 @@ export function useTreeLayout() {
             treeState: treeStates[subject.id] ?? 'bloqueada',
             userStatus: us?.status ?? 'no_cursada',
             grade: us?.grade ?? null,
+            isPendingUnlock: pendingSet.has(subject.id),
           }
 
           subjectNodes.push({
@@ -141,7 +145,7 @@ export function useTreeLayout() {
 
     // Paneles primero (al fondo), luego etiquetas y materias.
     return [...panelNodes, ...labelNodes, ...subjectNodes]
-  }, [subjects, treeStates, userSubjectMap])
+  }, [subjects, treeStates, userSubjectMap, pendingSet])
 
   const edges = useMemo<Edge[]>(() => {
     return subjects.flatMap(subject =>
